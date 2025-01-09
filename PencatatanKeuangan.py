@@ -14,17 +14,22 @@ if "data_keuangan" not in st.session_state:
 
 # Fungsi untuk menambah data
 def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
-    data_baru = {
-        "Tanggal": tanggal,
+    data_baru = pd.DataFrame([{
+        "Tanggal": pd.to_datetime(tanggal),
         "Kategori": kategori,
         "Tipe": tipe,
         "Jumlah": jumlah,
         "Keterangan": keterangan,
-    }
-    st.session_state["data_keuangan"] = pd.concat(
-        [st.session_state["data_keuangan"], pd.DataFrame([data_baru])],
-        ignore_index=True,
-    )
+    }])
+    
+    # Pastikan pembaruan dilakukan langsung pada session_state
+    if "data_keuangan" in st.session_state:
+        st.session_state["data_keuangan"] = pd.concat(
+            [st.session_state["data_keuangan"], data_baru],
+            ignore_index=True
+        )
+    else:
+        st.session_state["data_keuangan"] = data_baru
 
 # Fungsi untuk menghitung ringkasan
 def hitung_ringkasan(data):
@@ -116,3 +121,17 @@ else:
 # Menampilkan grafik
 st.header("Grafik Keuangan")
 buat_grafik(st.session_state["data_keuangan"])
+
+if st.button("Tambah Transaksi"):
+    try:
+        if jumlah > 0:
+            tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
+            st.success("Transaksi berhasil ditambahkan!")
+        else:
+            st.error("Jumlah harus lebih dari 0.")
+    except Exception as e:
+        st.error(f"Terjadi kesalahan: {e}")
+
+if st.button("Reset Data"):
+    st.session_state["data_keuangan"] = initialize_data()
+    st.success("Data berhasil direset.")
