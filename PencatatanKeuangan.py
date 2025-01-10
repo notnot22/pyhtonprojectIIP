@@ -48,7 +48,7 @@ def hitung_ringkasan(data):
     return pemasukan, pengeluaran, saldo
 
 # Fungsi untuk membuat laporan berdasarkan rentang waktu
-def buat_laporan(data, periode):
+def buat_laporan(data, periode, tanggal_awal=None, tanggal_akhir=None):
     if data.empty:
         return pd.DataFrame()
 
@@ -61,6 +61,8 @@ def buat_laporan(data, periode):
     elif periode == "Bulanan":
         start_date = pd.Timestamp(datetime.now().date().replace(day=1))
         return data[data["Tanggal"] >= start_date]
+    elif periode == "Rentang Tanggal" and tanggal_awal and tanggal_akhir:
+        return data[(data["Tanggal"] >= pd.to_datetime(tanggal_awal)) & (data["Tanggal"] <= pd.to_datetime(tanggal_akhir))]
     return data
 
 # Fungsi untuk membuat grafik
@@ -134,8 +136,14 @@ st.metric("Saldo", f"Rp {saldo:,.2f}")
 
 # Menampilkan laporan
 st.header("Laporan Keuangan")
-periode = st.selectbox("Pilih Periode", ["Harian", "Mingguan", "Bulanan"])
-laporan = buat_laporan(st.session_state["data_keuangan"], periode)
+periode = st.selectbox("Pilih Periode", ["Harian", "Mingguan", "Bulanan", "Rentang Tanggal"])
+if periode == "Rentang Tanggal":
+    tanggal_awal = st.date_input("Tanggal Awal", value=datetime.now().date() - timedelta(days=7))
+    tanggal_akhir = st.date_input("Tanggal Akhir", value=datetime.now().date())
+    laporan = buat_laporan(st.session_state["data_keuangan"], periode, tanggal_awal, tanggal_akhir)
+else:
+    laporan = buat_laporan(st.session_state["data_keuangan"], periode)
+
 if laporan.empty:
     st.warning("Tidak ada data untuk periode ini.")
 else:
