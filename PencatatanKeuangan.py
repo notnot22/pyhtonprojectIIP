@@ -54,12 +54,12 @@ def buat_laporan(data, periode):
 
     data["Tanggal"] = pd.to_datetime(data["Tanggal"])
     if periode == "Harian":
-        return data[data["Tanggal"] == datetime.now().date()]
+        return data[data["Tanggal"] == pd.Timestamp(datetime.now().date())]
     elif periode == "Mingguan":
-        start_date = datetime.now().date() - timedelta(days=7)
+        start_date = pd.Timestamp(datetime.now().date() - timedelta(days=7))
         return data[data["Tanggal"] >= start_date]
     elif periode == "Bulanan":
-        start_date = datetime.now().date().replace(day=1)
+        start_date = pd.Timestamp(datetime.now().date().replace(day=1))
         return data[data["Tanggal"] >= start_date]
     return data
 
