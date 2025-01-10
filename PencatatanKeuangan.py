@@ -95,7 +95,7 @@ if tipe == "Pemasukan":
     jumlah_unit = st.number_input("Jumlah Produk", min_value=1, step=1, value=1)
     harga_per_unit = HARGA_PRODUK[kategori]
     total_harga = jumlah_unit * harga_per_unit
-    st.write(f"Harga per unit: Rp {harga_per_unit:,.2f}")
+    st.write(f"Harga per produk: Rp {harga_per_unit:,.2f}")
     st.write(f"Total Harga: Rp {total_harga:,.2f}")
     jumlah = total_harga
 else:
