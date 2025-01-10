@@ -96,8 +96,12 @@ tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
 if tipe == "Pemasukan":
     kategori = st.selectbox("Kategori", ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E"])
-    jumlah = HARGA_PRODUK[kategori]
-    st.write(f"Harga per unit: Rp {jumlah:,.2f}")
+    jumlah_unit = st.number_input("Jumlah Unit", min_value=1, step=1, value=1)
+    harga_per_unit = HARGA_PRODUK[kategori]
+    total_harga = jumlah_unit * harga_per_unit
+    st.write(f"Harga per unit: Rp {harga_per_unit:,.2f}")
+    st.write(f"Total Harga: Rp {total_harga:,.2f}")
+    jumlah = total_harga
 else:
     kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
     jumlah = st.number_input("Jumlah (Rp)", min_value=0.0, step=0.01)
