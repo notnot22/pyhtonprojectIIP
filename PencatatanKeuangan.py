@@ -55,12 +55,6 @@ def buat_laporan(data, periode, tanggal_awal=None, tanggal_akhir=None):
     data["Tanggal"] = pd.to_datetime(data["Tanggal"])
     if periode == "Harian":
         return data[data["Tanggal"] == pd.Timestamp(datetime.now().date())]
-    elif periode == "Mingguan":
-        start_date = pd.Timestamp(datetime.now().date() - timedelta(days=7))
-        return data[data["Tanggal"] >= start_date]
-    elif periode == "Bulanan":
-        start_date = pd.Timestamp(datetime.now().date().replace(day=1))
-        return data[data["Tanggal"] >= start_date]
     elif periode == "Rentang Tanggal" and tanggal_awal and tanggal_akhir:
         return data[(data["Tanggal"] >= pd.to_datetime(tanggal_awal)) & (data["Tanggal"] <= pd.to_datetime(tanggal_akhir))]
     return data
@@ -136,7 +130,7 @@ st.metric("Saldo", f"Rp {saldo:,.2f}")
 
 # Menampilkan laporan
 st.header("Laporan Keuangan")
-periode = st.selectbox("Pilih Periode", ["Harian", "Mingguan", "Bulanan", "Rentang Tanggal"])
+periode = st.selectbox("Pilih Periode", ["Harian", "Rentang Tanggal"])
 if periode == "Rentang Tanggal":
     tanggal_awal = st.date_input("Tanggal Awal", value=datetime.now().date() - timedelta(days=7))
     tanggal_akhir = st.date_input("Tanggal Akhir", value=datetime.now().date())
