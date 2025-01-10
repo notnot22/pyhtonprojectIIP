@@ -83,17 +83,25 @@ st.markdown("Kelola keuangan Anda dengan mudah dan terorganisir.")
 # Form untuk menambah transaksi
 st.header("Tambah Transaksi")
 tanggal = st.date_input("Tanggal", value=datetime.now().date())
-kategori = st.selectbox("Kategori", ["Makanan", "Transportasi", "Hiburan", "Gaji", "Lainnya"])
 tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
+
+if tipe == "Pemasukan":
+    kategori = st.selectbox("Kategori", ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E"])
+else:
+    kategori = st.selectbox("Kategori", ["Makanan", "Transportasi", "Hiburan", "Lainnya"])
+
 jumlah = st.number_input("Jumlah", min_value=0.0, step=0.01)
 keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
 
 if st.button("Tambah Transaksi"):
-    if jumlah > 0:
-        tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
-        st.success("Transaksi berhasil ditambahkan!")
-    else:
-        st.error("Jumlah harus lebih dari 0.")
+    try:
+        if jumlah > 0:
+            tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
+            st.success("Transaksi berhasil ditambahkan!")
+        else:
+            st.error("Jumlah harus lebih dari 0.")
+    except Exception as e:
+        st.error(f"Terjadi kesalahan: {e}")
 
 # Menampilkan data keuangan
 st.header("Riwayat Transaksi")
@@ -121,17 +129,3 @@ else:
 # Menampilkan grafik
 st.header("Grafik Keuangan")
 buat_grafik(st.session_state["data_keuangan"])
-
-if st.button("Tambah Transaksi"):
-    try:
-        if jumlah > 0:
-            tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
-            st.success("Transaksi berhasil ditambahkan!")
-        else:
-            st.error("Jumlah harus lebih dari 0.")
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
-
-if st.button("Reset Data"):
-    st.session_state["data_keuangan"] = initialize_data()
-    st.success("Data berhasil direset.")
