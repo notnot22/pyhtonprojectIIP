@@ -91,23 +91,33 @@ tanggal = st.date_input("Tanggal", value=datetime.now().date())
 tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
 if tipe == "Pemasukan":
-    kategori = st.selectbox("Kategori", ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E"])
-    jumlah_unit = st.number_input("Jumlah Produk", min_value=1, step=1, value=1)
-    harga_per_unit = HARGA_PRODUK[kategori]
-    total_harga = jumlah_unit * harga_per_unit
-    st.write(f"Harga per produk: Rp {harga_per_unit:,.2f}")
-    st.write(f"Total Harga: Rp {total_harga:,.2f}")
-    jumlah = total_harga
+    st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
+    jumlah_produk = {}
+    total_pemasukan = 0
+    for produk, harga in HARGA_PRODUK.items():
+        jumlah_unit = st.number_input(f"{produk} - Harga per Produk (Rp {harga:,})", min_value=0, step=1, value=0)
+        total_harga = jumlah_unit * harga
+        jumlah_produk[produk] = total_harga
+        total_pemasukan += total_harga
+
+    st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
+    jumlah = total_pemasukan
+    kategori = "Penjualan Produk"
 else:
     kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
-    jumlah = st.number_input("Jumlah (Rp)", min_value=0.0, step=0.01)
+    jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0.0, step=0.01)
 
 keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
 
 if st.button("Tambah Transaksi"):
     try:
         if jumlah > 0:
-            tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
+            if tipe == "Pemasukan":
+                for produk, total_harga in jumlah_produk.items():
+                    if total_harga > 0:
+                        tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
+            else:
+                tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
             st.success("Transaksi berhasil ditambahkan!")
         else:
             st.error("Jumlah harus lebih dari 0.")
