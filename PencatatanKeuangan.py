@@ -12,6 +12,15 @@ def initialize_data():
 if "data_keuangan" not in st.session_state:
     st.session_state["data_keuangan"] = initialize_data()
 
+# Harga produk
+HARGA_PRODUK = {
+    "Produk A": 50000,
+    "Produk B": 35000,
+    "Produk C": 32000,
+    "Produk D": 27000,
+    "Produk E": 40000
+}
+
 # Fungsi untuk menambah data
 def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
     data_baru = pd.DataFrame([{
@@ -87,10 +96,12 @@ tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
 if tipe == "Pemasukan":
     kategori = st.selectbox("Kategori", ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E"])
+    jumlah = HARGA_PRODUK[kategori]
+    st.write(f"Harga per unit: Rp {jumlah:,.2f}")
 else:
-    kategori = st.selectbox("Kategori", ["Makanan", "Transportasi", "Hiburan", "Lainnya"])
+    kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
+    jumlah = st.number_input("Jumlah (Rp)", min_value=0.0, step=0.01)
 
-jumlah = st.number_input("Jumlah", min_value=0.0, step=0.01)
 keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
 
 if st.button("Tambah Transaksi"):
