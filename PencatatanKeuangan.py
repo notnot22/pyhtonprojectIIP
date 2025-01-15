@@ -151,9 +151,14 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"Gagal memproses file: {e}")
 
-# Fungsi untuk mengunduh data keuangan
+# Fungsi untuk mengunduh data keuangan dengan ringkasan tetap
+def unduh_data_keuangan(data):
+    csv_data = data.to_csv(index=False).encode("utf-8")
+    return csv_data
+
+# Menampilkan data dan tombol unduh
 st.subheader("Unduh Data Keuangan")
-downloaded_file = st.session_state["data_keuangan"].to_csv(index=False).encode("utf-8")
+downloaded_file = unduh_data_keuangan(st.session_state["data_keuangan"])
 st.download_button(
     label="Unduh CSV",
     data=downloaded_file,
@@ -161,7 +166,7 @@ st.download_button(
     mime="text/csv"
 )
 
-# Menampilkan ringkasan
+# Menampilkan ringkasan keuangan yang stabil
 st.header("Ringkasan Keuangan")
 pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
 st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
