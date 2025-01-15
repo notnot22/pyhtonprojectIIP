@@ -3,14 +3,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
-# Fungsi untuk menginisialisasi data
+# File untuk menyimpan data
+DATA_FILE = "data_keuangan.csv"
+
+# Fungsi untuk memuat data dari file
 @st.cache_data
-def initialize_data():
-    return pd.DataFrame(columns=["Tanggal", "Kategori", "Tipe", "Jumlah", "Keterangan"])
+def load_data():
+    try:
+        return pd.read_csv(DATA_FILE, parse_dates=["Tanggal"])
+    except FileNotFoundError:
+        return pd.DataFrame(columns=["Tanggal", "Kategori", "Tipe", "Jumlah", "Keterangan"])
+
+# Fungsi untuk menyimpan data ke file
+def save_data(data):
+    data.to_csv(DATA_FILE, index=False)
 
 # Inisialisasi data
 if "data_keuangan" not in st.session_state:
-    st.session_state["data_keuangan"] = initialize_data()
+    st.session_state["data_keuangan"] = load_data()
 
 # Harga produk
 HARGA_PRODUK = {
@@ -30,15 +40,13 @@ def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
         "Jumlah": jumlah,
         "Keterangan": keterangan,
     }])
-    
-    # Pastikan pembaruan dilakukan langsung pada session_state
-    if "data_keuangan" in st.session_state:
-        st.session_state["data_keuangan"] = pd.concat(
-            [st.session_state["data_keuangan"], data_baru],
-            ignore_index=True
-        )
-    else:
-        st.session_state["data_keuangan"] = data_baru
+
+    # Tambahkan data baru ke session_state dan simpan ke file
+    st.session_state["data_keuangan"] = pd.concat(
+        [st.session_state["data_keuangan"], data_baru],
+        ignore_index=True
+    )
+    save_data(st.session_state["data_keuangan"])
 
 # Fungsi untuk menghitung ringkasan
 def hitung_ringkasan(data):
