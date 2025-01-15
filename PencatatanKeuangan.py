@@ -3,14 +3,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
-# Fungsi untuk menginisialisasi data
+# File untuk menyimpan data
+DATA_FILE = "data_keuangan.csv"
+
+# Fungsi untuk memuat data dari file
 @st.cache_data
-def initialize_data():
-    return pd.DataFrame(columns=["Tanggal", "Kategori", "Tipe", "Jumlah", "Keterangan"])
+def load_data():
+    try:
+        return pd.read_csv(DATA_FILE, parse_dates=["Tanggal"])
+    except FileNotFoundError:
+        return pd.DataFrame(columns=["Tanggal", "Kategori", "Tipe", "Jumlah", "Keterangan"])
+
+# Fungsi untuk menyimpan data ke file
+def save_data(data):
+    data.to_csv(DATA_FILE, index=False)
 
 # Inisialisasi data
 if "data_keuangan" not in st.session_state:
-    st.session_state["data_keuangan"] = initialize_data()
+    st.session_state["data_keuangan"] = load_data()
 
 # Harga produk
 HARGA_PRODUK = {
@@ -30,15 +40,13 @@ def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
         "Jumlah": jumlah,
         "Keterangan": keterangan,
     }])
-    
-    # Pastikan pembaruan dilakukan langsung pada session_state
-    if "data_keuangan" in st.session_state:
-        st.session_state["data_keuangan"] = pd.concat(
-            [st.session_state["data_keuangan"], data_baru],
-            ignore_index=True
-        )
-    else:
-        st.session_state["data_keuangan"] = data_baru
+
+    # Tambahkan data baru ke session_state dan simpan ke file
+    st.session_state["data_keuangan"] = pd.concat(
+        [st.session_state["data_keuangan"], data_baru],
+        ignore_index=True
+    )
+    save_data(st.session_state["data_keuangan"])
 
 # Fungsi untuk menghitung ringkasan
 def hitung_ringkasan(data):
@@ -91,23 +99,33 @@ tanggal = st.date_input("Tanggal", value=datetime.now().date())
 tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
 if tipe == "Pemasukan":
-    kategori = st.selectbox("Kategori", ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E"])
-    jumlah_unit = st.number_input("Jumlah Produk", min_value=1, step=1, value=1)
-    harga_per_unit = HARGA_PRODUK[kategori]
-    total_harga = jumlah_unit * harga_per_unit
-    st.write(f"Harga per produk: Rp {harga_per_unit:,.2f}")
-    st.write(f"Total Harga: Rp {total_harga:,.2f}")
-    jumlah = total_harga
+    st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
+    jumlah_produk = {}
+    total_pemasukan = 0
+    for produk, harga in HARGA_PRODUK.items():
+        jumlah_unit = st.number_input(f"{produk} - Harga per Produk (Rp {harga:,})", min_value=0, step=1, value=0)
+        total_harga = jumlah_unit * harga
+        jumlah_produk[produk] = total_harga
+        total_pemasukan += total_harga
+
+    st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
+    jumlah = total_pemasukan
+    kategori = "Penjualan Produk"
 else:
     kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
-    jumlah = st.number_input("Jumlah (Rp)", min_value=0.0, step=0.01)
+    jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0.0, step=0.01)
 
 keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
 
 if st.button("Tambah Transaksi"):
     try:
         if jumlah > 0:
-            tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
+            if tipe == "Pemasukan":
+                for produk, total_harga in jumlah_produk.items():
+                    if total_harga > 0:
+                        tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
+            else:
+                tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
             st.success("Transaksi berhasil ditambahkan!")
         else:
             st.error("Jumlah harus lebih dari 0.")
@@ -120,6 +138,28 @@ if st.session_state["data_keuangan"].empty:
     st.info("Belum ada transaksi yang tercatat.")
 else:
     st.dataframe(st.session_state["data_keuangan"])
+
+# Fungsi untuk mengunggah file CSV
+st.subheader("Unggah Data dari File CSV")
+uploaded_file = st.file_uploader("Pilih file CSV", type="csv")
+if uploaded_file is not None:
+    try:
+        new_data = pd.read_csv(uploaded_file, parse_dates=["Tanggal"])
+        st.session_state["data_keuangan"] = pd.concat([st.session_state["data_keuangan"], new_data], ignore_index=True)
+        save_data(st.session_state["data_keuangan"])
+        st.success("Data berhasil diunggah dan ditambahkan.")
+    except Exception as e:
+        st.error(f"Gagal memproses file: {e}")
+
+# Fungsi untuk mengunduh data keuangan
+st.subheader("Unduh Data Keuangan")
+downloaded_file = st.session_state["data_keuangan"].to_csv(index=False).encode("utf-8")
+st.download_button(
+    label="Unduh CSV",
+    data=downloaded_file,
+    file_name="data_keuangan.csv",
+    mime="text/csv"
+)
 
 # Menampilkan ringkasan
 st.header("Ringkasan Keuangan")
