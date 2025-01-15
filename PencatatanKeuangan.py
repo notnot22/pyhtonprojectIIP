@@ -139,34 +139,7 @@ if st.session_state["data_keuangan"].empty:
 else:
     st.dataframe(st.session_state["data_keuangan"])
 
-# Fungsi untuk mengunggah file CSV
-st.subheader("Unggah Data dari File CSV")
-uploaded_file = st.file_uploader("Pilih file CSV", type="csv")
-if uploaded_file is not None:
-    try:
-        new_data = pd.read_csv(uploaded_file, parse_dates=["Tanggal"])
-        st.session_state["data_keuangan"] = pd.concat([st.session_state["data_keuangan"], new_data], ignore_index=True)
-        save_data(st.session_state["data_keuangan"])
-        st.success("Data berhasil diunggah dan ditambahkan.")
-    except Exception as e:
-        st.error(f"Gagal memproses file: {e}")
-
-# Fungsi untuk mengunduh data keuangan dengan ringkasan tetap
-def unduh_data_keuangan(data):
-    csv_data = data.to_csv(index=False).encode("utf-8")
-    return csv_data
-
-# Menampilkan data dan tombol unduh
-st.subheader("Unduh Data Keuangan")
-downloaded_file = unduh_data_keuangan(st.session_state["data_keuangan"])
-st.download_button(
-    label="Unduh CSV",
-    data=downloaded_file,
-    file_name="data_keuangan.csv",
-    mime="text/csv"
-)
-
-# Menampilkan ringkasan keuangan yang stabil
+# Menampilkan ringkasan
 st.header("Ringkasan Keuangan")
 pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
 st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
