@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 # File untuk menyimpan data
 DATA_FILE = "data_keuangan.csv"
+STOCK_FILE = "stok_produk.csv"
 
 # Fungsi untuk memuat data dari file
 @st.cache_data
@@ -14,22 +15,32 @@ def load_data():
     except FileNotFoundError:
         return pd.DataFrame(columns=["Tanggal", "Kategori", "Tipe", "Jumlah", "Keterangan"])
 
+@st.cache_data
+def load_stock():
+    try:
+        return pd.read_csv(STOCK_FILE)
+    except FileNotFoundError:
+        stok_awal = pd.DataFrame({
+            "Produk": ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E", "Produk F", "Produk G", "Produk H", "Produk I", "Produk J", "Produk K", "Produk L", "Produk M"],
+            "Harga": [50000, 35000, 32000, 27000, 40000, 45000, 36000, 33000, 29000, 41000, 47000, 38000, 34000],
+            "Stok": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+        })
+        stok_awal.to_csv(STOCK_FILE, index=False)
+        return stok_awal
+
 # Fungsi untuk menyimpan data ke file
 def save_data(data):
     data.to_csv(DATA_FILE, index=False)
+
+def save_stock(stock):
+    stock.to_csv(STOCK_FILE, index=False)
 
 # Inisialisasi data
 if "data_keuangan" not in st.session_state:
     st.session_state["data_keuangan"] = load_data()
 
-# Harga produk
-HARGA_PRODUK = {
-    "Produk A": 50000,
-    "Produk B": 35000,
-    "Produk C": 32000,
-    "Produk D": 27000,
-    "Produk E": 40000
-}
+if "stok_produk" not in st.session_state:
+    st.session_state["stok_produk"] = load_stock()
 
 # Fungsi untuk menambah data
 def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
@@ -47,6 +58,14 @@ def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
         ignore_index=True
     )
     save_data(st.session_state["data_keuangan"])
+
+# Fungsi untuk mengurangi stok produk
+def kurangi_stok(produk, jumlah):
+    stok_produk = st.session_state["stok_produk"]
+    if produk in stok_produk["Produk"].values:
+        indeks = stok_produk[stok_produk["Produk"] == produk].index[0]
+        stok_produk.at[indeks, "Stok"] -= jumlah
+        save_stock(stok_produk)
 
 # Fungsi untuk menghitung ringkasan
 def hitung_ringkasan(data):
@@ -102,10 +121,10 @@ if tipe == "Pemasukan":
     st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
     jumlah_produk = {}
     total_pemasukan = 0
-    for produk, harga in HARGA_PRODUK.items():
-        jumlah_unit = st.number_input(f"{produk} - Harga per Produk (Rp {harga:,})", min_value=0, step=1, value=0)
-        total_harga = jumlah_unit * harga
-        jumlah_produk[produk] = total_harga
+    for produk in st.session_state["stok_produk"].itertuples():
+        jumlah_unit = st.number_input(f"{produk.Produk} - Harga per Produk (Rp {produk.Harga:,})", min_value=0, step=1, value=0)
+        total_harga = jumlah_unit * produk.Harga
+        jumlah_produk[produk.Produk] = jumlah_unit
         total_pemasukan += total_harga
 
     st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
@@ -121,9 +140,11 @@ if st.button("Tambah Transaksi"):
     try:
         if jumlah > 0:
             if tipe == "Pemasukan":
-                for produk, total_harga in jumlah_produk.items():
-                    if total_harga > 0:
+                for produk, jumlah_unit in jumlah_produk.items():
+                    if jumlah_unit > 0:
+                        total_harga = jumlah_unit * st.session_state["stok_produk"][st.session_state["stok_produk"]["Produk"] == produk]["Harga"].values[0]
                         tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
+                        kurangi_stok(produk, jumlah_unit)
             else:
                 tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
             st.success("Transaksi berhasil ditambahkan!")
@@ -138,6 +159,10 @@ if st.session_state["data_keuangan"].empty:
     st.info("Belum ada transaksi yang tercatat.")
 else:
     st.dataframe(st.session_state["data_keuangan"])
+
+# Menampilkan stok produk
+st.header("Stok Produk")
+st.dataframe(st.session_state["stok_produk"])
 
 # Menampilkan ringkasan
 st.header("Ringkasan Keuangan")
