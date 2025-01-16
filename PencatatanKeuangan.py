@@ -119,8 +119,8 @@ st.markdown("Kelola keuangan Anda dengan mudah dan terorganisir.")
 menu = st.sidebar.radio("Menu", ["Pencatatan Keuangan", "Manajemen Stok Produk"])
 
 if menu == "Pencatatan Keuangan":
-    # Form untuk menambah transaksi
-    st.header("Tambah Transaksi")
+    # Form untuk mencatat transaksi
+    st.header("Pencatatan Keuangan")
     tanggal = st.date_input("Tanggal", value=datetime.now().date())
     tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
@@ -129,14 +129,17 @@ if menu == "Pencatatan Keuangan":
         col1, col2 = st.columns(2)
         jumlah_produk = {}
         total_pemasukan = 0
-        for idx, produk in enumerate(st.session_state["stok_produk"].itertuples()):
-            with (col1 if idx % 2 == 0 else col2):
-                jumlah_unit = st.number_input(f"{produk.Produk} ({produk.Kode_Produk}) - Harga Jual: Rp {produk.Harga_Jual:,}", min_value=0, step=1, value=0)
-                total_harga = jumlah_unit * produk.Harga_Jual
+
+        stok_produk = st.session_state["stok_produk"]
+        for idx, produk in enumerate(stok_produk.itertuples()):
+            kolom = col1 if idx % 2 == 0 else col2
+            with kolom:
+                jumlah_unit = st.number_input(f"{produk.Produk} - Rp {produk.Harga:,}", min_value=0, step=1, key=f"jumlah_{produk.Produk}")
+                total_harga = jumlah_unit * produk.Harga
                 jumlah_produk[produk.Produk] = jumlah_unit
                 total_pemasukan += total_harga
 
-        st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
+        st.write(f"*Total Pemasukan:* Rp {total_pemasukan:,.2f}")
         jumlah = total_pemasukan
         kategori = "Penjualan Produk"
     else:
@@ -151,7 +154,7 @@ if menu == "Pencatatan Keuangan":
                 if tipe == "Pemasukan":
                     for produk, jumlah_unit in jumlah_produk.items():
                         if jumlah_unit > 0:
-                            total_harga = jumlah_unit * st.session_state["stok_produk"][st.session_state["stok_produk"]["Produk"] == produk]["Harga Jual"].values[0]
+                            total_harga = jumlah_unit * stok_produk[stok_produk["Produk"] == produk]["Harga"].values[0]
                             tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
                             kurangi_stok(produk, jumlah_unit)
                 else:
