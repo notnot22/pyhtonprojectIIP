@@ -21,9 +21,12 @@ def load_stock():
         return pd.read_csv(STOCK_FILE)
     except FileNotFoundError:
         stok_awal = pd.DataFrame({
+            "Kode Produk": [f"P00{i}" for i in range(1, 14)],
             "Produk": ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E", "Produk F", "Produk G", "Produk H", "Produk I", "Produk J", "Produk K", "Produk L", "Produk M"],
-            "Harga": [50000, 35000, 32000, 27000, 40000, 45000, 36000, 33000, 29000, 41000, 47000, 38000, 34000],
-            "Stok": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+            "Merek": ["Merek X"] * 13,
+            "Harga Beli": [40000, 30000, 28000, 25000, 35000, 40000, 32000, 30000, 26000, 37000, 42000, 34000, 31000],
+            "Harga Jual": [50000, 35000, 32000, 27000, 40000, 45000, 36000, 33000, 29000, 41000, 47000, 38000, 34000],
+            "Stok": [100] * 13
         })
         stok_awal.to_csv(STOCK_FILE, index=False)
         return stok_awal
@@ -213,25 +216,3 @@ elif menu == "Manajemen Stok Produk":
             st.success(f"Stok untuk {produk_kurang} berhasil dikurangi.")
         else:
             st.error("Jumlah harus lebih dari 0 dan tidak boleh melebihi stok saat ini.")
-
-
-    # Menampilkan data keuangan
-    st.header("Riwayat Transaksi")
-    if st.session_state["data_keuangan"].empty:
-        st.info("Belum ada transaksi yang tercatat.")
-    else:
-        st.dataframe(st.session_state["data_keuangan"])
-
-    # Menampilkan ringkasan
-    st.header("Ringkasan Keuangan")
-    pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
-    st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
-    st.metric("Total Pengeluaran", f"Rp {pengeluaran:,.2f}")
-    st.metric("Saldo", f"Rp {saldo:,.2f}")
-
-    # Menampilkan laporan
-    st.header("Laporan Keuangan")
-    periode = st.selectbox("Pilih Periode", ["Harian", "Rentang Tanggal"])
-    if periode == "Rentang Tanggal":
-        tanggal_awal = st.date_input("Tanggal Awal", value=datetime.now().date() - timedelta(days=7))
-       
