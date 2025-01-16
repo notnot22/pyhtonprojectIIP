@@ -112,80 +112,70 @@ def buat_grafik(data):
 st.title("Aplikasi Pencatatan Keuangan")
 st.markdown("Kelola keuangan Anda dengan mudah dan terorganisir.")
 
-# Form untuk menambah transaksi
-st.header("Tambah Transaksi")
-tanggal = st.date_input("Tanggal", value=datetime.now().date())
-tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
+# Menu navigasi
+menu = st.sidebar.radio("Pilih Menu", ["Pencatatan Keuangan", "Manajemen Stok Produk"])
 
-if tipe == "Pemasukan":
-    st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
-    jumlah_produk = {}
-    total_pemasukan = 0
-    for produk in st.session_state["stok_produk"].itertuples():
-        jumlah_unit = st.number_input(f"{produk.Produk} - Harga per Produk (Rp {produk.Harga:,})", min_value=0, step=1, value=0)
-        total_harga = jumlah_unit * produk.Harga
-        jumlah_produk[produk.Produk] = jumlah_unit
-        total_pemasukan += total_harga
+if menu == "Pencatatan Keuangan":
+    # Form untuk menambah transaksi
+    st.header("Tambah Transaksi")
+    tanggal = st.date_input("Tanggal", value=datetime.now().date())
+    tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
-    st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
-    jumlah = total_pemasukan
-    kategori = "Penjualan Produk"
-else:
-    kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
-    jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0.0, step=0.01)
+    if tipe == "Pemasukan":
+        st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
+        col1, col2 = st.columns(2)
+        jumlah_produk = {}
+        total_pemasukan = 0
+        for idx, produk in enumerate(st.session_state["stok_produk"].itertuples()):
+            with (col1 if idx % 2 == 0 else col2):
+                jumlah_unit = st.number_input(f"{produk.Produk} - Harga per Produk (Rp {produk.Harga:,})", min_value=0, step=1, value=0)
+                total_harga = jumlah_unit * produk.Harga
+                jumlah_produk[produk.Produk] = jumlah_unit
+                total_pemasukan += total_harga
 
-keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
+        st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
+        jumlah = total_pemasukan
+        kategori = "Penjualan Produk"
+    else:
+        kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
+        jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0.0, step=0.01)
 
-if st.button("Tambah Transaksi"):
-    try:
-        if jumlah > 0:
-            if tipe == "Pemasukan":
-                for produk, jumlah_unit in jumlah_produk.items():
-                    if jumlah_unit > 0:
-                        total_harga = jumlah_unit * st.session_state["stok_produk"][st.session_state["stok_produk"]["Produk"] == produk]["Harga"].values[0]
-                        tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
-                        kurangi_stok(produk, jumlah_unit)
+    keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
+
+    if st.button("Tambah Transaksi"):
+        try:
+            if jumlah > 0:
+                if tipe == "Pemasukan":
+                    for produk, jumlah_unit in jumlah_produk.items():
+                        if jumlah_unit > 0:
+                            total_harga = jumlah_unit * st.session_state["stok_produk"][st.session_state["stok_produk"]["Produk"] == produk]["Harga"].values[0]
+                            tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
+                            kurangi_stok(produk, jumlah_unit)
+                else:
+                    tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
+                st.success("Transaksi berhasil ditambahkan!")
             else:
-                tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
-            st.success("Transaksi berhasil ditambahkan!")
-        else:
-            st.error("Jumlah harus lebih dari 0.")
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+                st.error("Jumlah harus lebih dari 0.")
+        except Exception as e:
+            st.error(f"Terjadi kesalahan: {e}")
 
-# Menampilkan data keuangan
-st.header("Riwayat Transaksi")
-if st.session_state["data_keuangan"].empty:
-    st.info("Belum ada transaksi yang tercatat.")
-else:
-    st.dataframe(st.session_state["data_keuangan"])
+    # Menampilkan data keuangan
+    st.header("Riwayat Transaksi")
+    if st.session_state["data_keuangan"].empty:
+        st.info("Belum ada transaksi yang tercatat.")
+    else:
+        st.dataframe(st.session_state["data_keuangan"])
 
-# Menampilkan stok produk
-st.header("Stok Produk")
-st.dataframe(st.session_state["stok_produk"])
+    # Menampilkan ringkasan
+    st.header("Ringkasan Keuangan")
+    pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
+    st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
+    st.metric("Total Pengeluaran", f"Rp {pengeluaran:,.2f}")
+    st.metric("Saldo", f"Rp {saldo:,.2f}")
 
-# Menampilkan ringkasan
-st.header("Ringkasan Keuangan")
-pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
-st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
-st.metric("Total Pengeluaran", f"Rp {pengeluaran:,.2f}")
-st.metric("Saldo", f"Rp {saldo:,.2f}")
-
-# Menampilkan laporan
-st.header("Laporan Keuangan")
-periode = st.selectbox("Pilih Periode", ["Harian", "Rentang Tanggal"])
-if periode == "Rentang Tanggal":
-    tanggal_awal = st.date_input("Tanggal Awal", value=datetime.now().date() - timedelta(days=7))
-    tanggal_akhir = st.date_input("Tanggal Akhir", value=datetime.now().date())
-    laporan = buat_laporan(st.session_state["data_keuangan"], periode, tanggal_awal, tanggal_akhir)
-else:
-    laporan = buat_laporan(st.session_state["data_keuangan"], periode)
-
-if laporan.empty:
-    st.warning("Tidak ada data untuk periode ini.")
-else:
-    st.dataframe(laporan)
-
-# Menampilkan grafik
-st.header("Grafik Keuangan")
-buat_grafik(st.session_state["data_keuangan"])
+    # Menampilkan laporan
+    st.header("Laporan Keuangan")
+    periode = st.selectbox("Pilih Periode", ["Harian", "Rentang Tanggal"])
+    if periode == "Rentang Tanggal":
+        tanggal_awal = st.date_input("Tanggal Awal", value=datetime.now().date() - timedelta(days=7))
+       
