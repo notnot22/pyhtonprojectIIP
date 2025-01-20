@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 # File untuk menyimpan data
 DATA_FILE = "data_keuangan.csv"
+STOCK_FILE = "stok_produk.csv"
 
 # Fungsi untuk memuat data dari file
 @st.cache_data
@@ -14,22 +15,33 @@ def load_data():
     except FileNotFoundError:
         return pd.DataFrame(columns=["Tanggal", "Kategori", "Tipe", "Jumlah", "Keterangan"])
 
+@st.cache_data
+def load_stock():
+    try:
+        return pd.read_csv(STOCK_FILE)
+    except FileNotFoundError:
+        stok_awal = pd.DataFrame({
+            "Kode Produk": [f"P00{i}" for i in range(1, 14)],
+            "Produk": ["Produk A", "Produk B", "Produk C", "Produk D", "Produk E", "Produk F", "Produk G", "Produk H", "Produk I", "Produk J", "Produk K", "Produk L", "Produk M"],
+            "Merek": ["Merek X"] * 13,
+            "Stok": [100] * 13
+        })
+        stok_awal.to_csv(STOCK_FILE, index=False)
+        return stok_awal
+
 # Fungsi untuk menyimpan data ke file
 def save_data(data):
     data.to_csv(DATA_FILE, index=False)
+
+def save_stock(stock):
+    stock.to_csv(STOCK_FILE, index=False)
 
 # Inisialisasi data
 if "data_keuangan" not in st.session_state:
     st.session_state["data_keuangan"] = load_data()
 
-# Harga produk
-HARGA_PRODUK = {
-    "Produk A": 50000,
-    "Produk B": 35000,
-    "Produk C": 32000,
-    "Produk D": 27000,
-    "Produk E": 40000
-}
+if "stok_produk" not in st.session_state:
+    st.session_state["stok_produk"] = load_stock()
 
 # Fungsi untuk menambah data
 def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
@@ -47,6 +59,14 @@ def tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan):
         ignore_index=True
     )
     save_data(st.session_state["data_keuangan"])
+
+# Fungsi untuk mengurangi stok produk
+def kurangi_stok(produk, jumlah):
+    stok_produk = st.session_state["stok_produk"]
+    if produk in stok_produk["Produk"].values:
+        indeks = stok_produk[stok_produk["Produk"] == produk].index[0]
+        stok_produk.at[indeks, "Stok"] -= jumlah
+        save_stock(stok_produk)
 
 # Fungsi untuk menghitung ringkasan
 def hitung_ringkasan(data):
@@ -93,74 +113,104 @@ def buat_grafik(data):
 st.title("Aplikasi Pencatatan Keuangan")
 st.markdown("Kelola keuangan Anda dengan mudah dan terorganisir.")
 
-# Form untuk menambah transaksi
-st.header("Tambah Transaksi")
-tanggal = st.date_input("Tanggal", value=datetime.now().date())
-tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
+# Tambahkan menu navigasi di Streamlit
+menu = st.sidebar.radio("Menu", ["Pencatatan Keuangan", "Manajemen Stok Produk"])
 
-if tipe == "Pemasukan":
-    st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
-    jumlah_produk = {}
-    total_pemasukan = 0
-    for produk, harga in HARGA_PRODUK.items():
-        jumlah_unit = st.number_input(f"{produk} - Harga per Produk (Rp {harga:,})", min_value=0, step=1, value=0)
-        total_harga = jumlah_unit * harga
-        jumlah_produk[produk] = total_harga
-        total_pemasukan += total_harga
+if menu == "Pencatatan Keuangan":
+    # Form untuk mencatat transaksi
+    st.header("Pencatatan Keuangan")
+    tanggal = st.date_input("Tanggal", value=datetime.now().date())
+    tipe = st.radio("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
 
-    st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
-    jumlah = total_pemasukan
-    kategori = "Penjualan Produk"
-else:
-    kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
-    jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0.0, step=0.01)
+    if tipe == "Pemasukan":
+        st.subheader("Masukkan Jumlah untuk Masing-Masing Produk")
+        col1, col2 = st.columns(2)
+        jumlah_produk = {}
+        total_pemasukan = 0
 
-keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
+        stok_produk = st.session_state["stok_produk"]
+        for idx, produk in enumerate(stok_produk.itertuples()):
+            kolom = col1 if idx % 2 == 0 else col2
+            with kolom:
+                jumlah_unit = st.number_input(f"{produk.Produk} - Rp {produk.Harga:,}", min_value=0, step=1, key=f"jumlah_{produk.Produk}")
+                total_harga = jumlah_unit * produk.Harga
+                jumlah_produk[produk.Produk] = jumlah_unit
+                total_pemasukan += total_harga
 
-if st.button("Tambah Transaksi"):
-    try:
-        if jumlah > 0:
-            if tipe == "Pemasukan":
-                for produk, total_harga in jumlah_produk.items():
-                    if total_harga > 0:
-                        tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
+        st.write(f"*Total Pemasukan:* Rp {total_pemasukan:,.2f}")
+        jumlah = total_pemasukan
+        kategori = "Penjualan Produk"
+    else:
+        kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
+        jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0.0, step=0.01)
+
+    keterangan = st.text_area("Keterangan", placeholder="Tuliskan detail transaksi")
+
+    if st.button("Tambah Transaksi"):
+        try:
+            if jumlah > 0:
+                if tipe == "Pemasukan":
+                    for produk, jumlah_unit in jumlah_produk.items():
+                        if jumlah_unit > 0:
+                            total_harga = jumlah_unit * stok_produk[stok_produk["Produk"] == produk]["Harga"].values[0]
+                            tambah_transaksi(tanggal, produk, tipe, total_harga, keterangan)
+                            kurangi_stok(produk, jumlah_unit)
+                else:
+                    tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
+                st.success("Transaksi berhasil ditambahkan!")
             else:
-                tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)
-            st.success("Transaksi berhasil ditambahkan!")
+                st.error("Jumlah harus lebih dari 0.")
+        except Exception as e:
+            st.error(f"Terjadi kesalahan: {e}")
+
+    # Menampilkan data keuangan
+    st.header("Riwayat Transaksi")
+    if st.session_state["data_keuangan"].empty:
+        st.info("Belum ada transaksi yang tercatat.")
+    else:
+        st.dataframe(st.session_state["data_keuangan"])
+
+    # Ringkasan keuangan
+    st.header("Ringkasan Keuangan")
+    pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
+    st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
+    st.metric("Total Pengeluaran", f"Rp {pengeluaran:,.2f}")
+    st.metric("Saldo", f"Rp {saldo:,.2f}")
+
+    # Grafik keuangan
+    st.header("Grafik Keuangan")
+    buat_grafik(st.session_state["data_keuangan"])
+
+elif menu == "Manajemen Stok Produk":
+    st.header("Manajemen Stok Produk")
+    stok_produk = st.session_state["stok_produk"]
+
+    # Menampilkan stok saat ini
+    st.subheader("Stok Produk Saat Ini")
+    st.dataframe(stok_produk)
+
+    # Form untuk menambahkan stok
+    st.subheader("Tambah Stok Produk")
+    produk_tambah = st.selectbox("Pilih Produk", stok_produk["Produk"])
+    jumlah_tambah = st.number_input("Jumlah Stok yang Akan Ditambahkan", min_value=0, step=1)
+    if st.button("Tambah Stok"):
+        if jumlah_tambah > 0:
+            indeks = stok_produk[stok_produk["Produk"] == produk_tambah].index[0]
+            stok_produk.at[indeks, "Stok"] += jumlah_tambah
+            save_stock(stok_produk)
+            st.success(f"Stok untuk {produk_tambah} berhasil ditambahkan.")
         else:
             st.error("Jumlah harus lebih dari 0.")
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
 
-# Menampilkan data keuangan
-st.header("Riwayat Transaksi")
-if st.session_state["data_keuangan"].empty:
-    st.info("Belum ada transaksi yang tercatat.")
-else:
-    st.dataframe(st.session_state["data_keuangan"])
-
-# Menampilkan ringkasan
-st.header("Ringkasan Keuangan")
-pemasukan, pengeluaran, saldo = hitung_ringkasan(st.session_state["data_keuangan"])
-st.metric("Total Pemasukan", f"Rp {pemasukan:,.2f}")
-st.metric("Total Pengeluaran", f"Rp {pengeluaran:,.2f}")
-st.metric("Saldo", f"Rp {saldo:,.2f}")
-
-# Menampilkan laporan
-st.header("Laporan Keuangan")
-periode = st.selectbox("Pilih Periode", ["Harian", "Rentang Tanggal"])
-if periode == "Rentang Tanggal":
-    tanggal_awal = st.date_input("Tanggal Awal", value=datetime.now().date() - timedelta(days=7))
-    tanggal_akhir = st.date_input("Tanggal Akhir", value=datetime.now().date())
-    laporan = buat_laporan(st.session_state["data_keuangan"], periode, tanggal_awal, tanggal_akhir)
-else:
-    laporan = buat_laporan(st.session_state["data_keuangan"], periode)
-
-if laporan.empty:
-    st.warning("Tidak ada data untuk periode ini.")
-else:
-    st.dataframe(laporan)
-
-# Menampilkan grafik
-st.header("Grafik Keuangan")
-buat_grafik(st.session_state["data_keuangan"])
+    # Form untuk mengurangi stok
+    st.subheader("Kurangi Stok Produk")
+    produk_kurang = st.selectbox("Pilih Produk untuk Dikurangi", stok_produk["Produk"])
+    jumlah_kurang = st.number_input("Jumlah Stok yang Akan Dikurangi", min_value=0, step=1)
+    if st.button("Kurangi Stok"):
+        indeks = stok_produk[stok_produk["Produk"] == produk_kurang].index[0]
+        if jumlah_kurang > 0 and stok_produk.at[indeks, "Stok"] >= jumlah_kurang:
+            stok_produk.at[indeks, "Stok"] -= jumlah_kurang
+            save_stock(stok_produk)
+            st.success(f"Stok untuk {produk_kurang} berhasil dikurangi.")
+        else:
+            st.error("Jumlah harus lebih dari 0 dan tidak boleh melebihi stok saat ini.")
