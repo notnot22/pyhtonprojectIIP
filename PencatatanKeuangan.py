@@ -167,6 +167,7 @@ if menu == "Pencatatan Keuangan":
         jumlah_produk[produk.NamaProduk] = jumlah_unit
         total_pemasukan += total_harga
 
+
         st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
         jumlah = total_pemasukan
         kategori = "Penjualan Produk"
