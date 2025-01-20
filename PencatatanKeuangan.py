@@ -157,12 +157,15 @@ if menu == "Pencatatan Keuangan":
         col1, col2 = st.columns(2)
         jumlah_produk = {}
         total_pemasukan = 0
-        for idx, produk in enumerate(st.session_state["stok_produk"].itertuples()):
+        for idx, produk in enumerate(st.session_state["stok_produk"].itertuples(index=False)):
             with (col1 if idx % 2 == 0 else col2):
-                jumlah_unit = st.number_input(f"{produk.NamaProduk} - Harga per Produk (Rp {produk.HargaProduk:,})", min_value=0, step=1, value=0)
-                total_harga = jumlah_unit * produk.HargaProduk
-                jumlah_produk[produk.NamaProduk] = jumlah_unit
-                total_pemasukan += total_harga
+                jumlah_unit = st.number_input(
+                f"{produk.NamaProduk} - Harga per Produk (Rp {produk.HargaProduk:,})",
+                min_value=0, step=1, value=0
+        )
+        total_harga = jumlah_unit * produk.HargaProduk
+        jumlah_produk[produk.NamaProduk] = jumlah_unit
+        total_pemasukan += total_harga
 
         st.write(f"Total Pemasukan: Rp {total_pemasukan:,.2f}")
         jumlah = total_pemasukan
