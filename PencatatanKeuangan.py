@@ -168,4 +168,26 @@ if menu == "Pencatatan Keuangan":
         jumlah = total_pemasukan
         kategori = "Penjualan Produk"
     else:
-        kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Per
+        kategori = st.selectbox("Kategori", ["Gaji", "Utilitas", "Perlengkapan", "Sewa"])
+        jumlah = st.number_input("Jumlah Pengeluaran (Rp)", min_value=0, step=1, value=0)
+
+    keterangan = st.text_input("Keterangan")
+
+    if st.button("Simpan Transaksi"):
+        if tipe == "Pemasukan":
+            for produk, jumlah_unit in jumlah_produk.items():
+                if st.button("Simpan Transaksi"):
+            if tipe == "Pemasukan":
+                for produk, jumlah_unit in jumlah_produk.items():
+                    if jumlah_unit > 0:
+                        kurangi_stok(produk, jumlah_unit)  # Kurangi stok produk
+                tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)  # Tambahkan transaksi ke data
+                st.success("Transaksi pemasukan berhasil disimpan.")
+            elif tipe == "Pengeluaran":
+                tambah_transaksi(tanggal, kategori, tipe, jumlah, keterangan)  # Tambahkan transaksi ke data
+                st.success("Transaksi pengeluaran berhasil disimpan.")
+
+elif menu == "Manajemen Stok Produk":
+    st.header("Manajemen Stok Produk")
+    st.dataframe(st.session_state["stok_produk"])
+
