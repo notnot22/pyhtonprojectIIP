@@ -30,7 +30,8 @@ def load_stock():
                 "Jeans", "Jeans", "Jeans", "Jeans",
                 "Shorts", "Shorts", "Shorts", "Shorts",
                 "Chinos", "Chinos", "Chinos", "Chinos",
-                "Sweat Pants", "Sweat Pants", "Sweat Pants"
+                "Sweat Pants", "Sweat Pants", "Sweat Pants", "Sweat Pants",
+                "Cargo Pants", "Jumpsuits", "Leggings", "Sweatshirts"
             ],
             "Merek": [
                 "Short Sleeve", "Long Sleeve", "AIRism Cotton", "Cotton",
@@ -40,7 +41,8 @@ def load_stock():
                 "Wide Tapered Jeans", "Straight Jeans", "Slim Fit Jeans", "Ultra Strech Skinny Fit Jeans",
                 "Stretch Slim Fit Shorts", "Geared Shorts", "Ultra Stretch Shorts", "Cargo Shorts",
                 "Slim Fit Chino Pants", "Pleated Wide Chino Pants", "Wide Fit Chino Pants", "Chino Shorts",
-                "Sweat Pants", "Sweat Wide Pants", "Ultra Stretch Sweat Shorts"
+                "Sweat Pants", "Sweat Wide Pants", "Ultra Stretch Sweat Shorts", "Wide Fit Cargo Pants",
+                "Tight Fit Jumpsuit", "Casual Leggings", "Slim Fit Sweatshirts", "Oversized Sweatshirts"
             ],
             "UkuranProduk": ["Small", "Medium", "Large"] * 11,
             "WarnaProduk": ["Hijau", "Hitam", "Putih"] * 11,
@@ -52,7 +54,8 @@ def load_stock():
                 210000, 220000, 200000, 195000,
                 100000, 105000, 110000, 115000,
                 140000, 145000, 150000, 135000,
-                90000, 95000, 100000
+                90000, 95000, 100000, 120000,
+                140000, 150000, 160000, 170000
             ],
             "Stok": [100] * 32
         })
@@ -244,3 +247,4 @@ elif menu == "Manajemen Stok Produk":
             st.success(f"Stok untuk {produk_kurang} berhasil dikurangi.")
         else:
             st.error("Jumlah harus lebih dari 0 dan tidak boleh melebihi stok saat ini.")
+
