@@ -124,49 +124,33 @@ def main():
         fig.patch.set_alpha(0)  # Transparent background
         st.pyplot(fig)
 
-    
     elif choice == "All Products":
-    st.subheader("All Products")
-    st.dataframe(product_data)
+        st.subheader("All Products")
+        st.dataframe(product_data)
 
-    st.subheader("Add New Product")
-    with st.form("add_product_form"):
-        jenis_produk = st.selectbox("Jenis Produk", ["T-Shirts", "Jackets", "Flannel", "Sweater", "Jeans", "Shorts", "Chinos", "Sweat Pants"])
-        nama_produk = st.text_input("Nama Produk")
-        ukuran_produk = st.selectbox("Ukuran Produk", ["Small", "Medium", "Large"])
-        warna_produk = st.selectbox("Warna Produk", ["Hijau", "Hitam", "Putih"])
-        harga_produk = st.number_input("Harga Produk", min_value=100000, step=5000)
-        stok_produk = st.number_input("Stok Produk", min_value=1, step=1)
-        submit_new_product = st.form_submit_button("Add Product")
+        st.subheader("Add New Product")
+        with st.form("add_product_form"):
+            jenis_produk = st.selectbox("Jenis Produk", ["T-Shirts", "Jackets", "Flannel", "Sweater", "Jeans", "Shorts", "Chinos", "Sweat Pants"])
+            nama_produk = st.text_input("Nama Produk")
+            ukuran_produk = st.selectbox("Ukuran Produk", ["Small", "Medium", "Large"])
+            warna_produk = st.selectbox("Warna Produk", ["Hijau", "Hitam", "Putih"])
+            harga_produk = st.number_input("Harga Produk", min_value=100000, step=5000)
+            stok_produk = st.number_input("Stok Produk", min_value=1, step=1)
+            submit_new_product = st.form_submit_button("Add Product")
 
-    if submit_new_product:
-        new_id = product_data["IdProduk"].max() + 1
-        new_product = {
-            "IdProduk": new_id,
-            "JenisProduk": jenis_produk,
-            "NamaProduk": nama_produk,
-            "UkuranProduk": ukuran_produk,
-            "WarnaProduk": warna_produk,
-            "HargaProduk": harga_produk,
-            "StokProduk": stok_produk
-        }
-        st.session_state.product_data = pd.concat([product_data, pd.DataFrame([new_product])], ignore_index=True)
-        st.success(f"Product {nama_produk} has been added successfully!")
-
-    st.subheader("Update Product Stock")
-    with st.form("update_stock_form"):
-        product_id = st.number_input("Enter Product ID", min_value=1, step=1)
-        new_stock = st.number_input("Enter New Stock Amount", min_value=0, step=1)
-        update_stock = st.form_submit_button("Update Stock")
-
-    if update_stock:
-        product_index = product_data[product_data["IdProduk"] == product_id].index
-        if product_index.empty:
-            st.error("Product ID not found!")
-        else:
-            product_data.loc[product_index, "StokProduk"] = new_stock
-            st.session_state.product_data = product_data
-            st.success(f"Stock for Product ID {product_id} has been updated to {new_stock}.")
+        if submit_new_product:
+            new_id = product_data["IdProduk"].max() + 1
+            new_product = {
+                "IdProduk": new_id,
+                "JenisProduk": jenis_produk,
+                "NamaProduk": nama_produk,
+                "UkuranProduk": ukuran_produk,
+                "WarnaProduk": warna_produk,
+                "HargaProduk": harga_produk,
+                "StokProduk": stok_produk
+            }
+            st.session_state.product_data = pd.concat([product_data, pd.DataFrame([new_product])], ignore_index=True)
+            st.success(f"Product {nama_produk} has been added successfully!")
 
     elif choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
