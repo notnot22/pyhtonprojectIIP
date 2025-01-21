@@ -74,18 +74,9 @@ def main():
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Dashboard":
-        st.subheader("Dashboard")
+        st.subheader("Top 10 Products by Sales")
 
-        # Total Earnings
-        sales_df = pd.DataFrame(sales_history)
-        total_earnings = sales_df["TotalPrice"].sum() if not sales_df.empty else 0
-
-        # Total Expenses
-        total_fixed_expenses = sum(fixed_expenses.values())
-        total_variable_expenses = sum(item["Amount"] for item in variable_expenses)
-        total_expenses = total_fixed_expenses + total_variable_expenses
-
-        # Top 10 Products by Sales
+        # Simulate random sales data for the top 10 products
         if not sales_history:
             for _ in range(50):
                 random_product = random.choice(product_data["IdProduk"].values)
@@ -104,29 +95,35 @@ def main():
         top_products_df = product_data[product_data["IdProduk"].isin(top_products.index)]
         top_products_df = top_products_df.merge(top_products, on="IdProduk")
         top_products_df = top_products_df.rename(columns={"Quantity": "Total Quantity Sold"})
-
-        st.subheader("Top 10 Products by Sales")
         st.dataframe(top_products_df)
 
         # Financial Summary
         st.subheader("Financial Summary")
-        col1, col2 = st.columns(2)
-        col1.metric("Total Earnings", f"Rp {total_earnings:,}")
-        col2.metric("Total Expenses", f"Rp {total_expenses:,}")
+        total_earnings = sales_df["TotalPrice"].sum() if not sales_df.empty else 0
+        total_fixed_expenses = sum(fixed_expenses.values())
+        total_variable_expenses = sum(item["Amount"] for item in variable_expenses)
+        total_expenses = total_fixed_expenses + total_variable_expenses
 
-        # Pie Chart
-        st.subheader("Earnings vs Expenses")
-        labels = ["Earnings", "Fixed Expenses", "Variable Expenses"]
-        values = [total_earnings, total_fixed_expenses, total_variable_expenses]
-        fig, ax = plt.subplots()
-        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
-        ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
-        fig.patch.set_alpha(0)  # Transparent background
-        st.pyplot(fig)
+        st.metric("Total Earnings", f"Rp {total_earnings:,}")
+        st.metric("Total Expenses", f"Rp {total_expenses:,}")
 
     elif choice == "All Products":
         st.subheader("All Products")
         st.dataframe(product_data)
+
+        st.subheader("Update Product Stock")
+        with st.form("update_stock_form"):
+            product_id = st.number_input("Enter Product ID", min_value=1, max_value=len(product_data), step=1)
+            additional_stock = st.number_input("Additional Stock", min_value=1, step=1)
+            submit_update_stock = st.form_submit_button("Update Stock")
+
+        if submit_update_stock:
+            product_index = product_data[product_data["IdProduk"] == product_id].index
+            if not product_index.empty:
+                product_data.loc[product_index, "StokProduk"] += additional_stock
+                st.success(f"Stock for Product ID {product_id} updated successfully!")
+            else:
+                st.error("Product ID not found!")
 
         st.subheader("Add New Product")
         with st.form("add_product_form"):
@@ -173,6 +170,7 @@ def main():
                         "NamaProduk": product_data.loc[product_index, "NamaProduk"].values[0],
                         "Quantity": quantity,
                         "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0]
+                        
                     })
                     st.success("Transaction Successful!")
                 else:
@@ -242,3 +240,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+                   
