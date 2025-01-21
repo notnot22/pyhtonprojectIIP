@@ -147,7 +147,7 @@ def main():
         sales_df = pd.DataFrame(sales_history)
         if not sales_df.empty:
             total_sales = sales_df.groupby("IdProduk")["TotalPrice"].sum().reset_index()
-            total_sales = total_sales.merge(product_data, on="IdProduk")[["NamaProduk", "TotalPrice"]]
+            total_sales = total_sales.merge(product_data, on="IdProduk")[["IdProduk", "JenisProduk", "NamaProduk", "WarnaProduk", "TotalPrice"]]
             total_sales = total_sales.rename(columns={"TotalPrice": "Total Earnings"})
 
             st.subheader("Total Earnings by Product")
