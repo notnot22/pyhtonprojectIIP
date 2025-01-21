@@ -3,30 +3,6 @@ import pandas as pd
 import random
 from datetime import datetime
 import matplotlib.pyplot as plt
-import sqlite3
-
-# Database setup
-conn = sqlite3.connect("business_management.db")
-cursor = conn.cursor()
-
-# Create tables
-cursor.execute('''CREATE TABLE IF NOT EXISTS sales (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT,
-    product_id INTEGER,
-    product_name TEXT,
-    quantity INTEGER,
-    total_price INTEGER
-)''')
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS expenses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT,
-    amount INTEGER,
-    date TEXT
-)''')
-
-conn.commit()
 
 # Generate Product Data
 def generate_product_data():
@@ -81,11 +57,17 @@ def main():
     # Load product data
     if "product_data" not in st.session_state:
         st.session_state.product_data = generate_product_data()
+    if "sales_history" not in st.session_state:
+        st.session_state.sales_history = []
     if "fixed_expenses" not in st.session_state:
         st.session_state.fixed_expenses = generate_fixed_expenses()
+    if "variable_expenses" not in st.session_state:
+        st.session_state.variable_expenses = []
 
     product_data = st.session_state.product_data
+    sales_history = st.session_state.sales_history
     fixed_expenses = st.session_state.fixed_expenses
+    variable_expenses = st.session_state.variable_expenses
 
     # Sidebar menu
     menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses"]
@@ -93,14 +75,38 @@ def main():
 
     if choice == "Dashboard":
         st.subheader("Dashboard")
-        
+
         # Total Earnings
-        sales_df = pd.read_sql_query("SELECT * FROM sales", conn)
-        total_earnings = sales_df["total_price"].sum() if not sales_df.empty else 0
+        sales_df = pd.DataFrame(sales_history)
+        total_earnings = sales_df["TotalPrice"].sum() if not sales_df.empty else 0
 
         # Total Expenses
-        expenses_df = pd.read_sql_query("SELECT * FROM expenses", conn)
-        total_expenses = expenses_df["amount"].sum() if not expenses_df.empty else 0
+        total_fixed_expenses = sum(fixed_expenses.values())
+        total_variable_expenses = sum(item["Amount"] for item in variable_expenses)
+        total_expenses = total_fixed_expenses + total_variable_expenses
+
+        # Top 10 Products by Sales
+        if not sales_history:
+            for _ in range(50):
+                random_product = random.choice(product_data["IdProduk"].values)
+                random_quantity = random.randint(1, 5)
+                product_index = product_data[product_data["IdProduk"] == random_product].index[0]
+                sales_history.append({
+                    "Date": datetime.now(),
+                    "IdProduk": random_product,
+                    "NamaProduk": product_data.loc[product_index, "NamaProduk"],
+                    "Quantity": random_quantity,
+                    "TotalPrice": random_quantity * product_data.loc[product_index, "HargaProduk"]
+                })
+
+        sales_df = pd.DataFrame(sales_history)
+        top_products = sales_df.groupby("IdProduk")["Quantity"].sum().sort_values(ascending=False).head(10)
+        top_products_df = product_data[product_data["IdProduk"].isin(top_products.index)]
+        top_products_df = top_products_df.merge(top_products, on="IdProduk")
+        top_products_df = top_products_df.rename(columns={"Quantity": "Total Quantity Sold"})
+
+        st.subheader("Top 10 Products by Sales")
+        st.dataframe(top_products_df)
 
         # Financial Summary
         st.subheader("Financial Summary")
@@ -108,23 +114,43 @@ def main():
         col1.metric("Total Earnings", f"Rp {total_earnings:,}")
         col2.metric("Total Expenses", f"Rp {total_expenses:,}")
 
+        # Pie Chart
+        st.subheader("Earnings vs Expenses")
+        labels = ["Earnings", "Fixed Expenses", "Variable Expenses"]
+        values = [total_earnings, total_fixed_expenses, total_variable_expenses]
+        fig, ax = plt.subplots()
+        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+        ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
+        fig.patch.set_alpha(0)  # Transparent background
+        st.pyplot(fig)
+
     elif choice == "All Products":
         st.subheader("All Products")
         st.dataframe(product_data)
 
-        st.subheader("Update Stock")
-        with st.form("update_stock_form"):
-            product_id = st.number_input("Enter Product ID", min_value=1, step=1)
-            additional_stock = st.number_input("Enter Additional Stock", min_value=1, step=1)
-            update_stock = st.form_submit_button("Update Stock")
+        st.subheader("Add New Product")
+        with st.form("add_product_form"):
+            jenis_produk = st.selectbox("Jenis Produk", ["T-Shirts", "Jackets", "Flannel", "Sweater", "Jeans", "Shorts", "Chinos", "Sweat Pants"])
+            nama_produk = st.text_input("Nama Produk")
+            ukuran_produk = st.selectbox("Ukuran Produk", ["Small", "Medium", "Large"])
+            warna_produk = st.selectbox("Warna Produk", ["Hijau", "Hitam", "Putih"])
+            harga_produk = st.number_input("Harga Produk", min_value=100000, step=5000)
+            stok_produk = st.number_input("Stok Produk", min_value=1, step=1)
+            submit_new_product = st.form_submit_button("Add Product")
 
-        if update_stock:
-            product_index = product_data[product_data["IdProduk"] == product_id].index
-            if product_index.empty:
-                st.error("Product ID not found!")
-            else:
-                product_data.loc[product_index, "StokProduk"] += additional_stock
-                st.success(f"Stock updated successfully for Product ID {product_id}!")
+        if submit_new_product:
+            new_id = product_data["IdProduk"].max() + 1
+            new_product = {
+                "IdProduk": new_id,
+                "JenisProduk": jenis_produk,
+                "NamaProduk": nama_produk,
+                "UkuranProduk": ukuran_produk,
+                "WarnaProduk": warna_produk,
+                "HargaProduk": harga_produk,
+                "StokProduk": stok_produk
+            }
+            st.session_state.product_data = pd.concat([product_data, pd.DataFrame([new_product])], ignore_index=True)
+            st.success(f"Product {nama_produk} has been added successfully!")
 
     elif choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
@@ -141,20 +167,68 @@ def main():
             else:
                 if product_data.loc[product_index, "StokProduk"].values[0] >= quantity:
                     product_data.loc[product_index, "StokProduk"] -= quantity
-                    total_price = quantity * product_data.loc[product_index, "HargaProduk"].values[0]
-                    cursor.execute("INSERT INTO sales (date, product_id, product_name, quantity, total_price) VALUES (?, ?, ?, ?, ?)",
-                                   (datetime.now(), product_id, product_data.loc[product_index, "NamaProduk"].values[0], quantity, total_price))
-                    conn.commit()
+                    sales_history.append({
+                        "Date": datetime.now(),
+                        "IdProduk": product_id,
+                        "NamaProduk": product_data.loc[product_index, "NamaProduk"].values[0],
+                        "Quantity": quantity,
+                        "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0]
+                    })
                     st.success("Transaction Successful!")
                 else:
                     st.error("Insufficient stock!")
 
         st.subheader("Sales History")
-        sales_df = pd.read_sql_query("SELECT * FROM sales", conn)
-        st.dataframe(sales_df)
+        sales_df = pd.DataFrame(sales_history)
+        if not sales_df.empty:
+            st.dataframe(sales_df)
+        else:
+            st.info("No sales history available.")
+
+    elif choice == "Sales Report":
+        st.subheader("Sales Report")
+        sales_df = pd.DataFrame(sales_history)
+        if not sales_df.empty:
+            total_sales = sales_df.groupby("IdProduk")["TotalPrice"].sum().reset_index()
+            total_sales = total_sales.merge(product_data, on="IdProduk")[["IdProduk", "JenisProduk", "NamaProduk", "WarnaProduk", "TotalPrice"]]
+            total_sales = total_sales.rename(columns={"TotalPrice": "Total Earnings"})
+
+            st.subheader("Total Earnings by Product")
+            st.dataframe(total_sales)
+
+            st.subheader("Sales Over Time")
+            date_option = st.radio("Select Report Type", ["Daily", "Date Range"])
+
+            if date_option == "Daily":
+                selected_date = st.date_input("Select Date", value=datetime.now().date())
+                filtered_sales = sales_df[sales_df["Date"].dt.date == selected_date]
+            else:
+                start_date = st.date_input("Start Date", value=datetime.now().date())
+                end_date = st.date_input("End Date", value=datetime.now().date())
+                filtered_sales = sales_df[(sales_df["Date"].dt.date >= start_date) & (sales_df["Date"].dt.date <= end_date)]
+
+            if not filtered_sales.empty:
+                st.bar_chart(filtered_sales.groupby(filtered_sales["Date"].dt.date)["TotalPrice"].sum())
+            else:
+                st.info("No sales data available for the selected period.")
+        else:
+            st.info("No sales data available.")
 
     elif choice == "Expenses":
         st.subheader("Expenses")
+
+        # Fixed Expenses
+        st.subheader("Fixed Expenses")
+        fixed_expenses_df = pd.DataFrame(list(fixed_expenses.items()), columns=["Expense Type", "Amount"])
+        st.dataframe(fixed_expenses_df)
+
+        # Variable Expenses
+        st.subheader("Variable Expenses")
+        variable_expenses_df = pd.DataFrame(variable_expenses)
+        if not variable_expenses_df.empty:
+            st.dataframe(variable_expenses_df)
+        else:
+            st.info("No variable expenses added.")
 
         st.subheader("Add Variable Expense")
         with st.form("add_variable_expense_form"):
@@ -163,14 +237,8 @@ def main():
             add_expense = st.form_submit_button("Add Expense")
 
         if add_expense:
-            cursor.execute("INSERT INTO expenses (type, amount, date) VALUES (?, ?, ?)",
-                           (expense_type, expense_amount, datetime.now()))
-            conn.commit()
+            variable_expenses.append({"Expense Type": expense_type, "Amount": expense_amount})
             st.success(f"Expense {expense_type} of Rp {expense_amount:,} added successfully!")
-
-        st.subheader("Expense History")
-        expenses_df = pd.read_sql_query("SELECT * FROM expenses", conn)
-        st.dataframe(expenses_df)
 
 if __name__ == "__main__":
     main()
