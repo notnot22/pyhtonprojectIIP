@@ -22,20 +22,28 @@ def generate_product_data():
     warna_produk = ["Hijau", "Hitam", "Putih"]
 
     id_counter = 1
+    combined_products = {}
+
     for jenis in jenis_produk:
         for nama in nama_produk[jenis]:
             for ukuran in ukuran_produk:
                 for warna in warna_produk:
-                    product_data.append({
-                        "IdProduk": id_counter,
-                        "JenisProduk": jenis,
-                        "NamaProduk": nama,
-                        "UkuranProduk": ukuran,
-                        "WarnaProduk": warna,
-                        "HargaProduk": random.randint(100000, 300000),
-                        "StokProduk": 100
-                    })
-                    id_counter += 1
+                    key = (jenis, ukuran, warna)
+                    if key not in combined_products:
+                        combined_products[key] = {
+                            "IdProduk": id_counter,
+                            "JenisProduk": jenis,
+                            "NamaProduk": nama,
+                            "UkuranProduk": ukuran,
+                            "WarnaProduk": warna,
+                            "HargaProduk": random.randint(100000, 300000),
+                            "StokProduk": 100
+                        }
+                        id_counter += 1
+                    else:
+                        combined_products[key]["StokProduk"] += 100
+
+    product_data.extend(combined_products.values())
     return pd.DataFrame(product_data)
 
 # Main App
