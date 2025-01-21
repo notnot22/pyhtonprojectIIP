@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import random
+from datetime import datetime
+import matplotlib.pyplot as plt
 
 # Generate Product Data
 def generate_product_data():
@@ -40,12 +42,52 @@ def generate_product_data():
 
 # Main App
 def main():
-    st.title("Clothing Business Management")
+    st.title("Clothing Business Dashboard")
 
     # Load product data
     if "product_data" not in st.session_state:
         st.session_state.product_data = generate_product_data()
+    if "sales_history" not in st.session_state:
+        st.session_state.sales_history = []
+
     product_data = st.session_state.product_data
+    sales_history = st.session_state.sales_history
+
+    # Dashboard View
+    st.subheader("Dashboard")
+
+    # Top 10 Products by Sales
+    st.subheader("Top 10 Products by Sales")
+    sales_df = pd.DataFrame(sales_history)
+    if not sales_df.empty:
+        top_products = sales_df.groupby("IdProduk")["Quantity"].sum().sort_values(ascending=False).head(10)
+        top_products_df = product_data[product_data["IdProduk"].isin(top_products.index)]
+        top_products_df = top_products_df.merge(top_products, on="IdProduk")
+        top_products_df = top_products_df.rename(columns={"Quantity": "Total Quantity Sold"})
+        st.dataframe(top_products_df)
+    else:
+        st.info("No sales data available.")
+
+    # Sales Report
+    st.subheader("Sales Report")
+    if not sales_df.empty:
+        date_option = st.radio("Select Report Type", ["Daily", "Date Range"])
+
+        if date_option == "Daily":
+            selected_date = st.date_input("Select Date", value=datetime.now().date())
+            filtered_sales = sales_df[sales_df["Date"].dt.date == selected_date]
+        else:
+            start_date = st.date_input("Start Date", value=datetime.now().date())
+            end_date = st.date_input("End Date", value=datetime.now().date())
+            filtered_sales = sales_df[(sales_df["Date"].dt.date >= start_date) & (sales_df["Date"].dt.date <= end_date)]
+
+        if not filtered_sales.empty:
+            st.dataframe(filtered_sales)
+            st.bar_chart(filtered_sales.groupby(filtered_sales["Date"].dt.date)["TotalPrice"].sum())
+        else:
+            st.info("No sales data available for the selected period.")
+    else:
+        st.info("No sales data available.")
 
     # Sidebar menu
     menu = ["View Products", "Add Sales Transaction", "View Stock"]
@@ -70,13 +112,20 @@ def main():
             else:
                 if product_data.loc[product_index, "StokProduk"].values[0] >= quantity:
                     product_data.loc[product_index, "StokProduk"] -= quantity
+                    sales_history.append({
+                        "Date": datetime.now(),
+                        "IdProduk": product_id,
+                        "NamaProduk": product_data.loc[product_index, "NamaProduk"].values[0],
+                        "Quantity": quantity,
+                        "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0]
+                    })
                     st.success("Transaction Successful!")
                 else:
                     st.error("Insufficient stock!")
 
     elif choice == "View Stock":
         st.subheader("Stock Status")
-        st.dataframe(product_data[["IdProduk", "NamaProduk", "StokProduk"]])
+        st.dataframe(product_data)
 
 if __name__ == "__main__":
     main()
