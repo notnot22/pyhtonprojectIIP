@@ -107,6 +107,16 @@ def main():
         st.metric("Total Earnings", f"Rp {total_earnings:,}")
         st.metric("Total Expenses", f"Rp {total_expenses:,}")
 
+        # Pie Chart
+        st.subheader("Earnings vs Expenses")
+        labels = ["Earnings", "Fixed Expenses", "Variable Expenses"]
+        values = [total_earnings, total_fixed_expenses, total_variable_expenses]
+        fig, ax = plt.subplots()
+        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90, textprops={"color": "white"})
+        ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
+        fig.patch.set_alpha(0)  # Transparent background
+        st.pyplot(fig)
+
     elif choice == "All Products":
         st.subheader("All Products")
         st.dataframe(product_data)
@@ -155,6 +165,7 @@ def main():
         with st.form("sales_form"):
             product_id = st.number_input("Enter Product ID", min_value=1, max_value=len(product_data), step=1)
             quantity = st.number_input("Enter Quantity Sold", min_value=1, step=1)
+            transaction_date = st.date_input("Select Transaction Date", value=datetime.now().date())
             submit = st.form_submit_button("Submit")
 
         if submit:
@@ -165,12 +176,11 @@ def main():
                 if product_data.loc[product_index, "StokProduk"].values[0] >= quantity:
                     product_data.loc[product_index, "StokProduk"] -= quantity
                     sales_history.append({
-                        "Date": datetime.now(),
+                        "Date": pd.Timestamp(transaction_date),
                         "IdProduk": product_id,
                         "NamaProduk": product_data.loc[product_index, "NamaProduk"].values[0],
                         "Quantity": quantity,
                         "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0]
-                        
                     })
                     st.success("Transaction Successful!")
                 else:
@@ -240,5 +250,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-                   
