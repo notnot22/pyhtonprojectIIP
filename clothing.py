@@ -3,10 +3,6 @@ import pandas as pd
 import random
 from datetime import datetime
 import matplotlib.pyplot as plt
-import matplotlib
-
-# Set matplotlib to use a transparent background
-matplotlib.rcParams['savefig.facecolor'] = 'none'
 
 # Generate Product Data
 def generate_product_data():
@@ -44,16 +40,6 @@ def generate_product_data():
                     id_counter += 1
     return pd.DataFrame(product_data)
 
-# Generate Fixed Expenses Data
-def generate_fixed_expenses():
-    return {
-        "Gaji Karyawan": 5000000,
-        "Bahan Baku": 7000000,
-        "Utilitas": 2000000,
-        "Advertising": 3000000,
-        "Asuransi": 1500000
-    }
-
 # Main App
 def main():
     st.title("Clothing Business Management")
@@ -63,18 +49,12 @@ def main():
         st.session_state.product_data = generate_product_data()
     if "sales_history" not in st.session_state:
         st.session_state.sales_history = []
-    if "fixed_expenses" not in st.session_state:
-        st.session_state.fixed_expenses = generate_fixed_expenses()
-    if "variable_expenses" not in st.session_state:
-        st.session_state.variable_expenses = []
 
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
-    fixed_expenses = st.session_state.fixed_expenses
-    variable_expenses = st.session_state.variable_expenses
 
     # Sidebar menu
-    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses"]
+    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Dashboard":
@@ -100,24 +80,6 @@ def main():
         top_products_df = top_products_df.merge(top_products, on="IdProduk")
         top_products_df = top_products_df.rename(columns={"Quantity": "Total Quantity Sold"})
         st.dataframe(top_products_df)
-
-        st.subheader("Financial Overview")
-        total_income = sales_df["TotalPrice"].sum()
-        total_fixed_expenses = sum(fixed_expenses.values())
-        total_variable_expenses = sum([expense["Amount"] for expense in variable_expenses])
-        total_expenses = total_fixed_expenses + total_variable_expenses
-
-        col1, col2 = st.columns(2)
-        col1.metric("Total Income", f"Rp {total_income:,.0f}")
-        col2.metric("Total Expenses", f"Rp {total_expenses:,.0f}")
-
-        st.subheader("Income and Expenses Distribution")
-        fig, ax = plt.subplots()
-        labels = ["Income", "Fixed Expenses", "Variable Expenses"]
-        sizes = [total_income, total_fixed_expenses, total_variable_expenses]
-        ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
-        ax.axis("equal")
-        st.pyplot(fig)
 
     elif choice == "All Products":
         st.subheader("All Products")
@@ -208,29 +170,6 @@ def main():
                 st.info("No sales data available for the selected period.")
         else:
             st.info("No sales data available.")
-
-    elif choice == "Expenses":
-        st.subheader("Manage Expenses")
-
-        st.subheader("Fixed Expenses")
-        fixed_expenses_df = pd.DataFrame(list(fixed_expenses.items()), columns=["Expense Type", "Amount"])
-        st.dataframe(fixed_expenses_df)
-
-        st.subheader("Variable Expenses")
-        with st.form("add_variable_expense_form"):
-            expense_type = st.text_input("Expense Type")
-            expense_amount = st.number_input("Amount", min_value=0, step=5000)
-            add_expense = st.form_submit_button("Add Expense")
-
-        if add_expense:
-            variable_expenses.append({"Expense Type": expense_type, "Amount": expense_amount})
-            st.success(f"Variable expense '{expense_type}' added successfully!")
-
-        if variable_expenses:
-            variable_expenses_df = pd.DataFrame(variable_expenses)
-            st.dataframe(variable_expenses_df)
-        else:
-            st.info("No variable expenses recorded.")
 
 if __name__ == "__main__":
     main()
