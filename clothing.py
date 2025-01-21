@@ -42,7 +42,7 @@ def generate_product_data():
 
 # Main App
 def main():
-    st.title("Clothing Business Dashboard")
+    st.title("Clothing Business Management")
 
     # Load product data
     if "product_data" not in st.session_state:
@@ -53,51 +53,39 @@ def main():
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
 
-    # Dashboard View
-    st.subheader("Dashboard")
+    # Sidebar menu
+    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report"]
+    choice = st.sidebar.selectbox("Menu", menu)
 
-    # Top 10 Products by Sales
-    st.subheader("Top 10 Products by Sales")
-    sales_df = pd.DataFrame(sales_history)
-    if not sales_df.empty:
+    if choice == "Dashboard":
+        st.subheader("Top 10 Products by Sales")
+
+        # Simulate random sales data for the top 10 products
+        if not sales_history:
+            for _ in range(50):
+                random_product = random.choice(product_data["IdProduk"].values)
+                random_quantity = random.randint(1, 5)
+                product_index = product_data[product_data["IdProduk"] == random_product].index[0]
+                sales_history.append({
+                    "Date": datetime.now(),
+                    "IdProduk": random_product,
+                    "NamaProduk": product_data.loc[product_index, "NamaProduk"],
+                    "Quantity": random_quantity,
+                    "TotalPrice": random_quantity * product_data.loc[product_index, "HargaProduk"]
+                })
+
+        sales_df = pd.DataFrame(sales_history)
         top_products = sales_df.groupby("IdProduk")["Quantity"].sum().sort_values(ascending=False).head(10)
         top_products_df = product_data[product_data["IdProduk"].isin(top_products.index)]
         top_products_df = top_products_df.merge(top_products, on="IdProduk")
         top_products_df = top_products_df.rename(columns={"Quantity": "Total Quantity Sold"})
         st.dataframe(top_products_df)
-    else:
-        st.info("No sales data available.")
 
-    # Sales Report
-    st.subheader("Sales Report")
-    if not sales_df.empty:
-        date_option = st.radio("Select Report Type", ["Daily", "Date Range"])
-
-        if date_option == "Daily":
-            selected_date = st.date_input("Select Date", value=datetime.now().date())
-            filtered_sales = sales_df[sales_df["Date"].dt.date == selected_date]
-        else:
-            start_date = st.date_input("Start Date", value=datetime.now().date())
-            end_date = st.date_input("End Date", value=datetime.now().date())
-            filtered_sales = sales_df[(sales_df["Date"].dt.date >= start_date) & (sales_df["Date"].dt.date <= end_date)]
-
-        if not filtered_sales.empty:
-            st.dataframe(filtered_sales)
-            st.bar_chart(filtered_sales.groupby(filtered_sales["Date"].dt.date)["TotalPrice"].sum())
-        else:
-            st.info("No sales data available for the selected period.")
-    else:
-        st.info("No sales data available.")
-
-    # Sidebar menu
-    menu = ["View Products", "Add Sales Transaction", "View Stock"]
-    choice = st.sidebar.selectbox("Menu", menu)
-
-    if choice == "View Products":
-        st.subheader("Product List")
+    elif choice == "All Products":
+        st.subheader("All Products")
         st.dataframe(product_data)
 
-    elif choice == "Add Sales Transaction":
+    elif choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
 
         with st.form("sales_form"):
@@ -123,9 +111,41 @@ def main():
                 else:
                     st.error("Insufficient stock!")
 
-    elif choice == "View Stock":
-        st.subheader("Stock Status")
-        st.dataframe(product_data)
+        st.subheader("Sales History")
+        sales_df = pd.DataFrame(sales_history)
+        if not sales_df.empty:
+            st.dataframe(sales_df)
+        else:
+            st.info("No sales history available.")
+
+    elif choice == "Sales Report":
+        st.subheader("Sales Report")
+        sales_df = pd.DataFrame(sales_history)
+        if not sales_df.empty:
+            total_sales = sales_df.groupby("IdProduk")["TotalPrice"].sum().reset_index()
+            total_sales = total_sales.merge(product_data, on="IdProduk")[["NamaProduk", "TotalPrice"]]
+            total_sales = total_sales.rename(columns={"TotalPrice": "Total Earnings"})
+
+            st.subheader("Total Earnings by Product")
+            st.dataframe(total_sales)
+
+            st.subheader("Sales Over Time")
+            date_option = st.radio("Select Report Type", ["Daily", "Date Range"])
+
+            if date_option == "Daily":
+                selected_date = st.date_input("Select Date", value=datetime.now().date())
+                filtered_sales = sales_df[sales_df["Date"].dt.date == selected_date]
+            else:
+                start_date = st.date_input("Start Date", value=datetime.now().date())
+                end_date = st.date_input("End Date", value=datetime.now().date())
+                filtered_sales = sales_df[(sales_df["Date"].dt.date >= start_date) & (sales_df["Date"].dt.date <= end_date)]
+
+            if not filtered_sales.empty:
+                st.bar_chart(filtered_sales.groupby(filtered_sales["Date"].dt.date)["TotalPrice"].sum())
+            else:
+                st.info("No sales data available for the selected period.")
+        else:
+            st.info("No sales data available.")
 
 if __name__ == "__main__":
     main()
