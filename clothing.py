@@ -40,6 +40,16 @@ def generate_product_data():
                     id_counter += 1
     return pd.DataFrame(product_data)
 
+# Generate Fixed Expenses
+def generate_fixed_expenses():
+    return {
+        "Gaji Karyawan": 5000000,
+        "Bahan Baku": 7000000,
+        "Utilitas": 2000000,
+        "Advertising": 3000000,
+        "Asuransi": 1500000
+    }
+
 # Main App
 def main():
     st.title("Clothing Business Management")
@@ -49,18 +59,33 @@ def main():
         st.session_state.product_data = generate_product_data()
     if "sales_history" not in st.session_state:
         st.session_state.sales_history = []
+    if "fixed_expenses" not in st.session_state:
+        st.session_state.fixed_expenses = generate_fixed_expenses()
+    if "variable_expenses" not in st.session_state:
+        st.session_state.variable_expenses = []
 
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
+    fixed_expenses = st.session_state.fixed_expenses
+    variable_expenses = st.session_state.variable_expenses
 
     # Sidebar menu
-    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report"]
+    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Dashboard":
-        st.subheader("Top 10 Products by Sales")
+        st.subheader("Dashboard")
 
-        # Simulate random sales data for the top 10 products
+        # Total Earnings
+        sales_df = pd.DataFrame(sales_history)
+        total_earnings = sales_df["TotalPrice"].sum() if not sales_df.empty else 0
+
+        # Total Expenses
+        total_fixed_expenses = sum(fixed_expenses.values())
+        total_variable_expenses = sum(item["Amount"] for item in variable_expenses)
+        total_expenses = total_fixed_expenses + total_variable_expenses
+
+        # Top 10 Products by Sales
         if not sales_history:
             for _ in range(50):
                 random_product = random.choice(product_data["IdProduk"].values)
@@ -79,7 +104,25 @@ def main():
         top_products_df = product_data[product_data["IdProduk"].isin(top_products.index)]
         top_products_df = top_products_df.merge(top_products, on="IdProduk")
         top_products_df = top_products_df.rename(columns={"Quantity": "Total Quantity Sold"})
+
+        st.subheader("Top 10 Products by Sales")
         st.dataframe(top_products_df)
+
+        # Financial Summary
+        st.subheader("Financial Summary")
+        col1, col2 = st.columns(2)
+        col1.metric("Total Earnings", f"Rp {total_earnings:,}")
+        col2.metric("Total Expenses", f"Rp {total_expenses:,}")
+
+        # Pie Chart
+        st.subheader("Earnings vs Expenses")
+        labels = ["Earnings", "Fixed Expenses", "Variable Expenses"]
+        values = [total_earnings, total_fixed_expenses, total_variable_expenses]
+        fig, ax = plt.subplots()
+        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+        ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
+        fig.patch.set_alpha(0)  # Transparent background
+        st.pyplot(fig)
 
     elif choice == "All Products":
         st.subheader("All Products")
@@ -170,6 +213,32 @@ def main():
                 st.info("No sales data available for the selected period.")
         else:
             st.info("No sales data available.")
+
+    elif choice == "Expenses":
+        st.subheader("Expenses")
+
+        # Fixed Expenses
+        st.subheader("Fixed Expenses")
+        fixed_expenses_df = pd.DataFrame(list(fixed_expenses.items()), columns=["Expense Type", "Amount"])
+        st.dataframe(fixed_expenses_df)
+
+        # Variable Expenses
+        st.subheader("Variable Expenses")
+        variable_expenses_df = pd.DataFrame(variable_expenses)
+        if not variable_expenses_df.empty:
+            st.dataframe(variable_expenses_df)
+        else:
+            st.info("No variable expenses added.")
+
+        st.subheader("Add Variable Expense")
+        with st.form("add_variable_expense_form"):
+            expense_type = st.selectbox("Expense Type", ["Peralatan", "Bangunan", "Cetakan"])
+            expense_amount = st.number_input("Expense Amount", min_value=0, step=1000)
+            add_expense = st.form_submit_button("Add Expense")
+
+        if add_expense:
+            variable_expenses.append({"Expense Type": expense_type, "Amount": expense_amount})
+            st.success(f"Expense {expense_type} of Rp {expense_amount:,} added successfully!")
 
 if __name__ == "__main__":
     main()
