@@ -43,11 +43,11 @@ def generate_product_data():
 # Generate Fixed Expenses
 def generate_fixed_expenses():
     return {
-        "Gaji Karyawan": 5000000,
-        "Bahan Baku": 7000000,
-        "Utilitas": 2000000,
-        "Advertising": 3000000,
-        "Asuransi": 1500000
+        "Gaji Karyawan": 15000000,
+        "Bahan Baku": 10000000,
+        "Utilitas": 9000000,
+        "Advertising": 5000000,
+        "Asuransi": 5000000
     }
 
 # Main App
