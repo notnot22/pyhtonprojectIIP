@@ -251,8 +251,8 @@ def main():
         with st.form("add_variable_expense_form"):
             expense_type = st.selectbox("Expense Type", ["Peralatan", "Bangunan", "Cetakan"])
             expense_amount = st.number_input("Expense Amount", min_value=0, step==1000)
-            add_expense = st.form_submit_button("Add Expense")
 
+                add_expense = st.form_submit_button("Add Expense")
         if add_expense:
             variable_expenses.append({"Expense Type": expense_type, "Amount": expense_amount})
             st.success(f"Expense {expense_type} of Rp {expense_amount:,} added successfully!")
