@@ -43,11 +43,11 @@ def generate_product_data():
 # Generate Fixed Expenses
 def generate_fixed_expenses():
     return {
-        "Gaji Karyawan": 15000000,
-        "Bahan Baku": 10000000,
-        "Utilitas": 9000000,
-        "Advertising": 5000000,
-        "Asuransi": 5000000
+        "Gaji Karyawan": 5000000,
+        "Bahan Baku": 7000000,
+        "Utilitas": 2000000,
+        "Advertising": 3000000,
+        "Asuransi": 1500000
     }
 
 # Main App
@@ -63,14 +63,17 @@ def main():
         st.session_state.fixed_expenses = generate_fixed_expenses()
     if "variable_expenses" not in st.session_state:
         st.session_state.variable_expenses = []
+    if "purchase_orders" not in st.session_state:
+        st.session_state.purchase_orders = []
 
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
     fixed_expenses = st.session_state.fixed_expenses
     variable_expenses = st.session_state.variable_expenses
+    purchase_orders = st.session_state.purchase_orders
 
     # Sidebar menu
-    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses"]
+    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses", "Purchase Orders"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Dashboard":
@@ -116,6 +119,15 @@ def main():
         ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
         fig.patch.set_alpha(0)  # Transparent background
         st.pyplot(fig)
+
+        st.subheader("Low Stock Alerts")
+        low_stock_threshold = 20
+        low_stock_products = product_data[product_data["StokProduk"] < low_stock_threshold]
+        if not low_stock_products.empty:
+            st.warning("Some products have low stock!")
+            st.dataframe(low_stock_products)
+        else:
+            st.success("All products have sufficient stock.")
 
     elif choice == "All Products":
         st.subheader("All Products")
@@ -247,6 +259,39 @@ def main():
         if add_expense:
             variable_expenses.append({"Expense Type": expense_type, "Amount": expense_amount})
             st.success(f"Expense {expense_type} of Rp {expense_amount:,} added successfully!")
+
+    elif choice == "Purchase Orders":
+        st.subheader("Purchase Orders")
+
+        # Add New Purchase Order
+        with st.form("add_purchase_order_form"):
+            supplier_name = st.text_input("Supplier Name")
+            order_date = st.date_input("Order Date", value=datetime.now().date())
+            order_status = st.selectbox("Order Status", ["In Process", "Shipped", "Completed"])
+            product_id = st.number_input("Product ID", min_value=1, max_value=len(product_data), step=1)
+            order_quantity = st.number_input("Order Quantity", min_value=1, step=1)
+            submit_purchase_order = st.form_submit_button("Add Purchase Order")
+
+        if submit_purchase_order:
+            product_index = product_data[product_data["IdProduk"] == product_id].index
+            if not product_index.empty:
+                purchase_orders.append({
+                    "SupplierName": supplier_name,
+                    "OrderDate": pd.Timestamp(order_date),
+                    "OrderStatus": order_status,
+                    "ProductID": product_id,
+                    "OrderQuantity": order_quantity
+                })
+                st.success("Purchase order added successfully!")
+            else:
+                st.error("Product ID not found!")
+
+        # Display Purchase Orders
+        if purchase_orders:
+            purchase_orders_df = pd.DataFrame(purchase_orders)
+            st.dataframe(purchase_orders_df)
+        else:
+            st.info("No purchase orders available.")
 
 if __name__ == "__main__":
     main()
