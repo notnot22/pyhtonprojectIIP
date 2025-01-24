@@ -43,8 +43,8 @@ def generate_product_data():
 # Generate Fixed Expenses
 def generate_fixed_expenses():
     return {
-        "Gaji Karyawan": 15000000,
-        "Bahan Baku": 10000000,
+        "Gaji Karyawan": 5000000,
+        "Bahan Baku": 7000000,
         "Utilitas": 2000000,
         "Advertising": 3000000,
         "Asuransi": 1500000
@@ -250,24 +250,17 @@ def main():
         st.subheader("Add Variable Expense")
         with st.form("add_variable_expense_form"):
             expense_type = st.selectbox("Expense Type", ["Peralatan", "Bangunan", "Cetakan"])
-            expense_amount = st.number_input("Expense Amount", min_value=0, step==1000)
+            expense_amount = st.number_input("Expense Amount", min_value=0, step=1000)
+            add_expense = st.form_submit_button("Add Expense")
 
-                add_expense = st.form_submit_button("Add Expense")
         if add_expense:
             variable_expenses.append({"Expense Type": expense_type, "Amount": expense_amount})
             st.success(f"Expense {expense_type} of Rp {expense_amount:,} added successfully!")
 
-        # Total Fixed and Variable Expenses
-        total_fixed_expenses = sum(fixed_expenses.values())
-        total_variable_expenses = sum(item["Amount"] for item in variable_expenses)
-
-        st.subheader("Expense Breakdown")
-        st.write(f"**Total Fixed Expenses:** Rp {total_fixed_expenses:,}")
-        st.write(f"**Total Variable Expenses:** Rp {total_variable_expenses:,}")
-
         # Expense Breakdown Chart
+        st.subheader("Expense Breakdown")
         expense_labels = ["Fixed Expenses", "Variable Expenses"]
-        expense_values = [total_fixed_expenses, total_variable_expenses]
+        expense_values = [sum(fixed_expenses.values()), sum(item["Amount"] for item in variable_expenses)]
         fig, ax = plt.subplots()
         ax.pie(expense_values, labels=expense_labels, autopct="%1.1f%%", startangle=90, textprops={"color": "white"})
         ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
