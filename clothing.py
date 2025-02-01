@@ -64,11 +64,11 @@ def main():
     if "variable_expenses" not in st.session_state:
         st.session_state.variable_expenses = []
     if "customers" not in st.session_state:
-    st.session_state.customers = [
-        {"CustomerId": "ctm1", "CustomerName": "Alice"},
-        {"CustomerId": "ctm2", "CustomerName": "Bob"},
-        {"CustomerId": "ctm3", "CustomerName": "Charlie"},
-    ]
+        st.session_state.customers = [
+            {"CustomerId": "ctm1", "CustomerName": "Alice"},
+            {"CustomerId": "ctm2", "CustomerName": "Bob"},
+            {"CustomerId": "ctm3", "CustomerName": "Charlie"},
+        ]
     
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
