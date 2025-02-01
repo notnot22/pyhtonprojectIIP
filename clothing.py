@@ -168,7 +168,7 @@ def main():
             st.session_state.product_data = pd.concat([product_data, pd.DataFrame([new_product])], ignore_index=True)
             st.success(f"Product {nama_produk} has been added successfully!")
 
-     elif choice == "Sales Transaction":
+    elif choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
 
         customer_type = st.radio("Customer Type", ["New Customer", "Existing Customer"])
