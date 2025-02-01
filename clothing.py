@@ -64,8 +64,13 @@ def main():
     if "variable_expenses" not in st.session_state:
         st.session_state.variable_expenses = []
     if "customers" not in st.session_state:
-        st.session_state.customers = []  # Store customer data in a dictionary
-
+        # Predefined customers
+        st.session_state.customers = {
+            "ctm1": "John Doe",
+            "ctm2": "Jane Smith",
+            "ctm3": "Alice Brown",
+            "ctm4": "Bob White"
+        }
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
     fixed_expenses = st.session_state.fixed_expenses
@@ -171,16 +176,6 @@ def main():
             st.success(f"Product {nama_produk} has been added successfully!")
             
     elif choice == "Sales Transaction":
-        st.subheader("Add Sales Transaction")
-
-        with st.form("sales_form"):
-            # Select or add a new customer
-            customer_id = st.selectbox("Select Customer ID", options=["New Customer"] + list(customers.keys()))
-            if customer_id == "New Customer":
-                customer_name = st.text_input("Enter Customer Name")
-                if st.form_submit_button("Add Customer"):
-                    new_customer_id = f"ctm{len(customers) + 1}"
-                    customers[new_customer_id] =if choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
 
         # Radio button to select new or existing customer
