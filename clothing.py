@@ -54,7 +54,7 @@ def generate_fixed_expenses():
 def main():
     st.title("Clothing Business Management")
 
-    # Load product data
+    # Initialize session state
     if "product_data" not in st.session_state:
         st.session_state.product_data = generate_product_data()
     if "sales_history" not in st.session_state:
@@ -63,19 +63,21 @@ def main():
         st.session_state.fixed_expenses = generate_fixed_expenses()
     if "variable_expenses" not in st.session_state:
         st.session_state.variable_expenses = []
+    if "customers" not in st.session_state:
+        st.session_state.customers = {}  # Store customer data in a dictionary
 
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
     fixed_expenses = st.session_state.fixed_expenses
     variable_expenses = st.session_state.variable_expenses
+    customers = st.session_state.customers
 
     # Sidebar menu
-    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses"]
+    menu = ["Dashboard", "All Products", "Sales Transaction", "Sales Report", "Expenses", "All Customer"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Dashboard":
         st.subheader("Top 10 Products by Sales")
-
         # Simulate random sales data for the top 10 products
         if not sales_history:
             for _ in range(50):
@@ -167,11 +169,22 @@ def main():
             }
             st.session_state.product_data = pd.concat([product_data, pd.DataFrame([new_product])], ignore_index=True)
             st.success(f"Product {nama_produk} has been added successfully!")
-
+            
     elif choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
 
         with st.form("sales_form"):
+            # Select or add a new customer
+            customer_id = st.selectbox("Select Customer ID", options=["New Customer"] + list(customers.keys()))
+            if customer_id == "New Customer":
+                customer_name = st.text_input("Enter Customer Name")
+                if st.form_submit_button("Add Customer"):
+                    new_customer_id = f"ctm{len(customers) + 1}"
+                    customers[new_customer_id] = customer_name
+                    st.session_state.customers = customers
+                    customer_id = new_customer_id
+                    st.success(f"New customer {customer_name} added with ID {new_customer_id}")
+
             product_id = st.number_input("Enter Product ID", min_value=1, max_value=len(product_data), step=1)
             quantity = st.number_input("Enter Quantity Sold", min_value=1, step=1)
             transaction_date = st.date_input("Select Transaction Date", value=datetime.now().date())
@@ -189,7 +202,8 @@ def main():
                         "IdProduk": product_id,
                         "NamaProduk": product_data.loc[product_index, "NamaProduk"].values[0],
                         "Quantity": quantity,
-                        "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0]
+                        "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0],
+                        "CustomerId": customer_id
                     })
                     st.success("Transaction Successful!")
                 else:
@@ -267,6 +281,24 @@ def main():
         fig.patch.set_alpha(0)  # Transparent background
         st.pyplot(fig)
 
+    elif choice == "All Customer":
+        st.subheader("All Customers")
+        customers_df = pd.DataFrame(list(customers.items()), columns=["Customer ID", "Customer Name"])
+        st.dataframe(customers_df)
+
+        st.subheader("Customer Purchase History")
+        customer_id_input = st.text_input("Enter Customer ID to view purchase history")
+        if customer_id_input in customers:
+            customer_sales = [sale for sale in sales_history if sale["CustomerId"] == customer_id_input]
+            customer_sales_df = pd.DataFrame(customer_sales)
+            if not customer_sales_df.empty:
+                st.dataframe(customer_sales_df)
+            else:
+                st.info(f"No transactions found for Customer ID {customer_id_input}.")
+        else:
+            st.info("Customer ID not found.")
+
+
+
 if __name__ == "__main__":
     main()
-
