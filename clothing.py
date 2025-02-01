@@ -291,22 +291,43 @@ def main():
         st.pyplot(fig)
 
     elif choice == "All Customer":
-        st.subheader("All Customers")
-        customers_df = pd.DataFrame(list(customers.items()), columns=["Customer ID", "Customer Name"])
-        st.dataframe(customers_df)
-
         st.subheader("Customer Purchase History")
         customer_id_input = st.text_input("Enter Customer ID to view purchase history")
 
-        if customer_id_input in customers:
+        if customer_id_input in [cust["CustomerId"] for cust in customers]:
+            # Ambil semua transaksi customer berdasarkan ID
             customer_sales = [sale for sale in sales_history if sale.get("CustomerId") == customer_id_input]
             customer_sales_df = pd.DataFrame(customer_sales)
+
             if not customer_sales_df.empty:
+                # Gabungkan dengan product_data untuk mendapatkan detail produk
+                customer_sales_df = customer_sales_df.merge(product_data, on="IdProduk", how="left")
+
+                # Pilih kolom yang relevan untuk ditampilkan
+                customer_sales_df = customer_sales_df[[
+                    "CustomerId", "NamaProduk", "JenisProduk", "UkuranProduk", "WarnaProduk", 
+                    "HargaProduk", "Quantity", "TotalPrice", "Date"
+                ]]
+
+                # Rename kolom agar lebih user-friendly
+                customer_sales_df.rename(columns={
+                    "CustomerId": "Customer ID",
+                    "NamaProduk": "Product Name",
+                    "JenisProduk": "Product Type",
+                    "UkuranProduk": "Size",
+                    "WarnaProduk": "Color",
+                    "HargaProduk": "Unit Price",
+                    "Quantity": "Quantity Sold",
+                    "TotalPrice": "Total Price",
+                    "Date": "Transaction Date"
+                }, inplace=True)
+
+                # Tampilkan DataFrame
                 st.dataframe(customer_sales_df)
             else:
                 st.info(f"No transactions found for Customer ID {customer_id_input}.")
         else:
-            st.info("Customer ID not found.")
+            st.warning("Customer ID not found.")
 
 if __name__ == "__main__":
     main()
