@@ -64,13 +64,12 @@ def main():
     if "variable_expenses" not in st.session_state:
         st.session_state.variable_expenses = []
     if "customers" not in st.session_state:
-        # Predefined customers
-        st.session_state.customers = {
-            "ctm1": "John Doe",
-            "ctm2": "Jane Smith",
-            "ctm3": "Alice Brown",
-            "ctm4": "Bob White"
-        }
+    st.session_state.customers = [
+        {"CustomerId": "ctm1", "CustomerName": "Alice"},
+        {"CustomerId": "ctm2", "CustomerName": "Bob"},
+        {"CustomerId": "ctm3", "CustomerName": "Charlie"},
+    ]
+    
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
     fixed_expenses = st.session_state.fixed_expenses
@@ -294,38 +293,44 @@ def main():
         st.subheader("Customer Purchase History")
         customer_id_input = st.text_input("Enter Customer ID to view purchase history")
 
-        if customer_id_input in [cust["CustomerId"] for cust in customers]:
-            # Ambil semua transaksi customer berdasarkan ID
-            customer_sales = [sale for sale in sales_history if sale.get("CustomerId") == customer_id_input]
-            customer_sales_df = pd.DataFrame(customer_sales)
+        # Pastikan ada pelanggan sebelum melakukan pencarian
+        customers = st.session_state.customers
 
-            if not customer_sales_df.empty:
-                # Gabungkan dengan product_data untuk mendapatkan detail produk
-                customer_sales_df = customer_sales_df.merge(product_data, on="IdProduk", how="left")
+        if customer_id_input:
+            customer_ids = [cust.get("CustomerId") for cust in customers]
 
-                # Pilih kolom yang relevan untuk ditampilkan
-                customer_sales_df = customer_sales_df[[
-                    "CustomerId", "NamaProduk", "JenisProduk", "UkuranProduk", "WarnaProduk", 
-                    "HargaProduk", "Quantity", "TotalPrice", "Date"
-                ]]
+            if customer_id_input in customer_ids:
+                # Ambil semua transaksi customer berdasarkan ID
+                customer_sales = [sale for sale in sales_history if sale.get("CustomerId") == customer_id_input]
+                customer_sales_df = pd.DataFrame(customer_sales)
 
-                # Rename kolom agar lebih user-friendly
-                customer_sales_df.rename(columns={
-                    "CustomerId": "Customer ID",
-                    "NamaProduk": "Product Name",
-                    "JenisProduk": "Product Type",
-                    "UkuranProduk": "Size",
-                    "WarnaProduk": "Color",
-                    "HargaProduk": "Unit Price",
-                    "Quantity": "Quantity Sold",
-                    "TotalPrice": "Total Price",
-                    "Date": "Transaction Date"
-                }, inplace=True)
+                if not customer_sales_df.empty:
+                    # Gabungkan dengan product_data untuk mendapatkan detail produk
+                    customer_sales_df = customer_sales_df.merge(product_data, on="IdProduk", how="left")
 
-                # Tampilkan DataFrame
-                st.dataframe(customer_sales_df)
-            else:
-                st.info(f"No transactions found for Customer ID {customer_id_input}.")
+                    # Pilih kolom yang relevan untuk ditampilkan
+                    customer_sales_df = customer_sales_df[[
+                        "CustomerId", "NamaProduk", "JenisProduk", "UkuranProduk", "WarnaProduk", 
+                        "HargaProduk", "Quantity", "TotalPrice", "Date"
+                    ]]
+
+                    # Rename kolom agar lebih user-friendly
+                    customer_sales_df.rename(columns={
+                        "CustomerId": "Customer ID",
+                        "NamaProduk": "Product Name",
+                        "JenisProduk": "Product Type",
+                        "UkuranProduk": "Size",
+                        "WarnaProduk": "Color",
+                        "HargaProduk": "Unit Price",
+                        "Quantity": "Quantity Sold",
+                        "TotalPrice": "Total Price",
+                        "Date": "Transaction Date"
+                    }, inplace=True)
+
+                    # Tampilkan DataFrame
+                    st.dataframe(customer_sales_df)
+                else:
+                    st.info(f"No transactions found for Customer ID {customer_id_input}.")
         else:
             st.warning("Customer ID not found.")
 
