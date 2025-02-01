@@ -180,11 +180,25 @@ def main():
                 customer_name = st.text_input("Enter Customer Name")
                 if st.form_submit_button("Add Customer"):
                     new_customer_id = f"ctm{len(customers) + 1}"
+                    customers[new_customer_id] =if choice == "Sales Transaction":
+        st.subheader("Add Sales Transaction")
+
+        # Radio button to select new or existing customer
+        customer_type = st.radio("Select Customer Type", ["New Customer", "Existing Customer"])
+
+        with st.form("sales_form"):
+            if customer_type == "New Customer":
+                customer_name = st.text_input("Enter Customer Name")
+                if st.form_submit_button("Add New Customer"):
+                    new_customer_id = f"ctm{len(customers) + 1}"
                     customers[new_customer_id] = customer_name
                     st.session_state.customers = customers
                     customer_id = new_customer_id
                     st.success(f"New customer {customer_name} added with ID {new_customer_id}")
+            elif customer_type == "Existing Customer":
+                customer_id = st.selectbox("Select Existing Customer ID", list(customers.keys()))
 
+            # Input transaction details
             product_id = st.number_input("Enter Product ID", min_value=1, max_value=len(product_data), step=1)
             quantity = st.number_input("Enter Quantity Sold", min_value=1, step=1)
             transaction_date = st.date_input("Select Transaction Date", value=datetime.now().date())
@@ -297,8 +311,6 @@ def main():
                 st.info(f"No transactions found for Customer ID {customer_id_input}.")
         else:
             st.info("Customer ID not found.")
-
-
 
 if __name__ == "__main__":
     main()
