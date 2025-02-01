@@ -168,8 +168,21 @@ def main():
             st.session_state.product_data = pd.concat([product_data, pd.DataFrame([new_product])], ignore_index=True)
             st.success(f"Product {nama_produk} has been added successfully!")
 
-    elif choice == "Sales Transaction":
+     if choice == "Sales Transaction":
         st.subheader("Add Sales Transaction")
+
+        customer_type = st.radio("Customer Type", ["New Customer", "Existing Customer"])
+
+        if customer_type == "New Customer":
+            customer_name = st.text_input("Customer Name")
+            submit_customer = st.button("Register & Continue")
+            if submit_customer and customer_name:
+                customer_id = f"ctm{len(customers) + 1}"
+                customers[customer_id] = customer_name
+                st.session_state.customers = customers
+                st.success(f"Customer Registered: {customer_id} - {customer_name}")
+        else:
+            customer_id = st.selectbox("Select Customer ID", list(customers.keys()))
 
         with st.form("sales_form"):
             product_id = st.number_input("Enter Product ID", min_value=1, max_value=len(product_data), step=1)
@@ -186,11 +199,14 @@ def main():
                     product_data.loc[product_index, "StokProduk"] -= quantity
                     sales_history.append({
                         "Date": pd.Timestamp(transaction_date),
+                        "CustomerID": customer_id,
+                        "CustomerName": customers[customer_id],
                         "IdProduk": product_id,
                         "NamaProduk": product_data.loc[product_index, "NamaProduk"].values[0],
                         "Quantity": quantity,
                         "TotalPrice": quantity * product_data.loc[product_index, "HargaProduk"].values[0]
                     })
+                    st.session_state.sales_history = sales_history
                     st.success("Transaction Successful!")
                 else:
                     st.error("Insufficient stock!")
@@ -266,6 +282,22 @@ def main():
         ax.axis("equal")  # Equal aspect ratio ensures the pie is drawn as a circle.
         fig.patch.set_alpha(0)  # Transparent background
         st.pyplot(fig)
+
+    elif choice == "All Customer":
+        st.subheader("All Customers")
+        customers_df = pd.DataFrame(list(customers.items()), columns=["Customer ID", "Customer Name"])
+        st.dataframe(customers_df)
+
+        st.subheader("Customer Purchase History")
+        selected_customer_id = st.text_input("Enter Customer ID")
+        if selected_customer_id in customers:
+            customer_purchases = [sale for sale in sales_history if sale["CustomerID"] == selected_customer_id]
+            if customer_purchases:
+                st.dataframe(pd.DataFrame(customer_purchases))
+            else:
+                st.info("No purchase history for this customer.")
+        elif selected_customer_id:
+            st.error("Customer ID not found!")
 
 if __name__ == "__main__":
     main()
