@@ -297,8 +297,9 @@ def main():
 
         st.subheader("Customer Purchase History")
         customer_id_input = st.text_input("Enter Customer ID to view purchase history")
+
         if customer_id_input in customers:
-            customer_sales = [sale for sale in sales_history if sale["CustomerId"] == customer_id_input]
+            customer_sales = [sale for sale in sales_history if sale.get("CustomerId") == customer_id_input]
             customer_sales_df = pd.DataFrame(customer_sales)
             if not customer_sales_df.empty:
                 st.dataframe(customer_sales_df)
