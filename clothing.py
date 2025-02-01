@@ -64,7 +64,7 @@ def main():
     if "variable_expenses" not in st.session_state:
         st.session_state.variable_expenses = []
     if "customers" not in st.session_state:
-        st.session_state.customers = {}  # Store customer data in a dictionary
+        st.session_state.customers = []  # Store customer data in a dictionary
 
     product_data = st.session_state.product_data
     sales_history = st.session_state.sales_history
